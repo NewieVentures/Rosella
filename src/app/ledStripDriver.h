@@ -16,6 +16,7 @@ enum Pattern {
   snake,
   strobe,
   weather,
+  wind,
 };
 
 enum Direction {
@@ -27,6 +28,11 @@ enum FadeState {
   fadeIn,
   fadeOut,
   offDwell
+};
+
+enum WindPattern {
+  direction,
+  speed,
 };
 
 typedef struct {
@@ -43,14 +49,16 @@ typedef struct {
 
   uint32_t progress;
 
-  int8_t weatherTempFadeDirection;
+  int8_t fadeDirection;
+
   uint32_t weatherRainCounter;
   uint8_t weatherRainPosition;
   uint32_t weatherWarningCounter;
   FadeState weatherWarningFadeState;
 
-
   uint32_t defaultLoopCurColIdx;
+
+  bool windSpeedTransition;
 } led_strip_state_t;
 
 class LedStripDriver {
@@ -66,6 +74,7 @@ private:
   void handleSnakePattern(led_strip_state_t *state, uint8_t *values);
   void handleWeatherPattern(led_strip_state_t *state, uint8_t *values);
   void handleDefaultLoopPattern(led_strip_state_t *state, uint8_t *values);
+  void handleWindPattern(led_strip_state_t *state, uint8_t *values);
 
 protected:
   uint32_t mPeriodMs;
@@ -97,6 +106,10 @@ protected:
   uint32_t mWeatherWarningOffDwellMs;
 
   Colour* mDefaultLoopColours[DL_NUM_COL];
+
+  Colour* mWindDirectionColour;
+  WindPattern mCurrentWindPattern;
+  uint32_t mWindSpeedTimeoutMs;
 
 public:
   void initState(led_strip_state_t *state);
@@ -174,6 +187,12 @@ public:
 
   /* Used by weather pattern to set weather warning off dwell time (ms) */
   LedStripDriver* warningOffDwell(uint32_t offDwellMs);
+
+  /* Used by wind pattern to set wind direction colour */
+  LedStripDriver* windDirectionColour(Colour *colour);
+
+  /* Used by wind pattern to show the wind speed for a certain time */
+  LedStripDriver* showWindSpeed(led_strip_state_t *state, uint32_t timeoutMs);
 
   /*
   * Used by progress pattern to set direction of increment

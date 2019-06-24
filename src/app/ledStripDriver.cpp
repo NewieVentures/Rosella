@@ -39,7 +39,7 @@ void LedStripDriver::initState(led_strip_state_t *state) {
   state->counter = 0;
   state->dutyCycle = 1;
   state->dutyDirection = DUTY_DIR_INC;
-  state->weatherTempFadeDirection = 1;
+  state->fadeDirection = 1;
 
   state->weatherRainCounter = 0;
   state->weatherRainPosition = 0;
@@ -48,6 +48,8 @@ void LedStripDriver::initState(led_strip_state_t *state) {
   state->weatherWarningFadeState = fadeIn;
 
   state->defaultLoopCurColIdx = 0;
+
+  state->windSpeedTransition = false;
 }
 
 LedStripDriver::LedStripDriver(led_strip_config_t *config) {
@@ -85,6 +87,8 @@ LedStripDriver::LedStripDriver(led_strip_config_t *config) {
   mDefaultLoopColours[1] = (Colour*)&COL_DL_GREEN;
   mDefaultLoopColours[2] = (Colour*)&COL_DL_BLUE;
   mDefaultLoopColours[3] = (Colour*)&COL_DL_RED;
+
+  mWindDirectionColour = (Colour*)&COL_BLACK;
 };
 
 inline void reverseDutyCycleDirection(led_strip_state_t *state) {
@@ -313,12 +317,12 @@ void LedStripDriver::handleWeatherPattern(led_strip_state_t *state, uint8_t *val
 
   if (currentStep >= steps) {
     state->counter = 0;
-    state->weatherTempFadeDirection *= -1;
+    state->fadeDirection *= -1;
 
     currentStep = 0;
   }
 
-  if (state->weatherTempFadeDirection > 0) {
+  if (state->fadeDirection > 0) {
     colourStart = mColourOn;
     colourEnd = mColourOff;
   } else {
@@ -497,11 +501,63 @@ void LedStripDriver::handleDefaultLoopPattern(led_strip_state_t *state, uint8_t 
   calcLinearOffsets(offsets, startCol);
   calcLinearGradients(offsets, gradients, endCol, (double)steps);
 
-  // if (state->counter >= (mPeriodMs - mConfig->resolutionMs)) {
-  //   valueRed = endCol->getRed();
-  //   valueGreen = endCol->getGreen();
-  //   valueBlue = endCol->getBlue();
-  // } else {
+  valueRed = calcGradientColourValue(gradients[INDEX_RED],
+                                     offsets[INDEX_RED],
+                                     currentStep);
+  valueGreen = calcGradientColourValue(gradients[INDEX_GREEN],
+                                       offsets[INDEX_GREEN],
+                                       currentStep);
+  valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
+                                      offsets[INDEX_BLUE],
+                                      currentStep);
+
+  for (uint32_t i=0; i < num_leds; i++) {
+    values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
+    values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
+    values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
+  }
+}
+
+void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values) {
+  const uint32_t num_leds = mConfig->numLeds;
+  const uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
+  uint32_t currentStep;
+  int32_t offsets[COLOURS_PER_LED];
+  double gradients[COLOURS_PER_LED];
+  uint8_t valueRed, valueGreen, valueBlue;
+  Colour *startCol, *endCol;
+  /*
+  if (state->counter >= mPeriodMs) {
+    state->counter = 0;
+
+    ++state->defaultLoopCurColIdx;
+
+    if (state->defaultLoopCurColIdx >= DL_NUM_COL) {
+      state->defaultLoopCurColIdx = 0;
+    }
+  }
+  */
+  if (mCurrentWindPattern == direction) {
+    valueRed = mWindDirectionColour->getRed();
+    valueGreen = mWindDirectionColour->getGreen();
+    valueBlue = mWindDirectionColour->getBlue();
+  } else {
+    if (state->windSpeedTransition) {
+      startCol = mWindDirectionColour;
+      endCol = mColourOn;
+    } else if (state->fadeDirection > 0) {
+      startCol = mColourOn;
+      endCol = mColourOff;
+    } else {
+      startCol = mColourOff;
+      endCol = mColourOn;
+    }
+
+    currentStep = state->counter / mConfig->resolutionMs;
+
+    calcLinearOffsets(offsets, startCol);
+    calcLinearGradients(offsets, gradients, endCol, (double)steps);
+
     valueRed = calcGradientColourValue(gradients[INDEX_RED],
                                        offsets[INDEX_RED],
                                        currentStep);
@@ -511,14 +567,13 @@ void LedStripDriver::handleDefaultLoopPattern(led_strip_state_t *state, uint8_t 
     valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
                                         offsets[INDEX_BLUE],
                                         currentStep);
-  // }
+  }
 
   for (uint32_t i=0; i < num_leds; i++) {
     values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
     values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
     values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
   }
-
 }
 
 void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
@@ -559,6 +614,10 @@ void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
 
     case defaultLoop:
       handleDefaultLoopPattern(state, values);
+      break;
+
+    case wind:
+      handleWindPattern(state, values);
       break;
 
     default:
@@ -691,18 +750,35 @@ LedStripDriver* LedStripDriver::warningColour(Colour *colour) {
   mWeatherWarningColour = colour;
   return this;
 }
+
 /* Used by weather pattern to set weather warning fade in time (ms) */
 LedStripDriver* LedStripDriver::warningFadeIn(uint32_t fadeTimeMs) {
   mWeatherWarningFadeInMs = fadeTimeMs;
   return this;
 }
+
 /* Used by weather pattern to set weather warning fade in time (ms) */
 LedStripDriver* LedStripDriver::warningFadeOut(uint32_t fadeTimeMs) {
   mWeatherWarningFadeOutMs = fadeTimeMs;
   return this;
 }
+
 /* Used by weather pattern to set weather warning off dwell time (ms) */
 LedStripDriver* LedStripDriver::warningOffDwell(uint32_t offDwellMs) {
   mWeatherWarningOffDwellMs = offDwellMs;
+  return this;
+}
+
+/* Used by wind pattern to set colour */
+LedStripDriver* LedStripDriver::windDirectionColour(Colour *colour) {
+  mWindDirectionColour = colour;
+  return this;
+}
+
+LedStripDriver* LedStripDriver::showWindSpeed(led_strip_state_t *state, uint32_t timeoutMs) {
+  state->windSpeedTransition = true;
+  mCurrentWindPattern = speed;
+  mWindSpeedTimeoutMs = timeoutMs;
+
   return this;
 }
