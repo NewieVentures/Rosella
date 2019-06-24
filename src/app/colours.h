@@ -16,4 +16,8 @@
 #define COLOUR_DARK_GREEN Colour(0x00, 0x64, 0x00)
 #define COLOUR_TURQUOISE Colour(0x40, 0xE0, 0xD0)
 
+#define COLOUR_DL_YELLOW Colour(255, 251, 0)
+#define COLOUR_DL_GREEN Colour(0, 234, 0)
+#define COLOUR_DL_BLUE Colour(0, 122, 255)
+#define COLOUR_DL_RED Colour(255, 0, 0)
 #endif

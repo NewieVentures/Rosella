@@ -7,14 +7,21 @@ const Colour COLOUR_DEFAULT = Colour(50, 0, 0);
 const Colour COL_BLACK = COLOUR_BLACK;
 const Colour COL_WHITE = COLOUR_WHITE;
 
+const Colour COL_DL_YELLOW = COLOUR_DL_YELLOW;
+const Colour COL_DL_GREEN = COLOUR_DL_GREEN;
+const Colour COL_DL_BLUE = COLOUR_DL_BLUE;
+const Colour COL_DL_RED = COLOUR_DL_RED;
+
 #define DUTY_DIR_INC 1
 #define DUTY_DIR_DEC -1
 #define DUTY_MAX 99
 #define DUTY_MIN 1
 
-void calcLinearOffsets(int32_t *offsets, Colour *startCol);
-void calcLinearGradients(int32_t *offsets, double *gradients, Colour *endCol, double steps);
-uint8_t calcGradientColourValue(double gradient, double offset, uint32_t step);
+static void calcLinearOffsets(int32_t *offsets, Colour *startCol);
+static void calcLinearGradients(int32_t *offsets, double *gradients, Colour *endCol, double steps);
+static uint8_t calcGradientColourValue(double gradient, double offset, uint32_t step);
+static Colour* getDefaultLoopStartColour(Colour** colours, uint32_t currentIndex);
+static Colour* getDefaultLoopEndColour(Colour** colours, uint32_t currentIndex);
 
 void calcLinearOffsets(int32_t *offsets, Colour *startCol) {
   offsets[INDEX_RED] = startCol->getRed();
@@ -39,6 +46,8 @@ void LedStripDriver::initState(led_strip_state_t *state) {
 
   state->weatherWarningCounter = 0;
   state->weatherWarningFadeState = fadeIn;
+
+  state->defaultLoopCurColIdx = 0;
 }
 
 LedStripDriver::LedStripDriver(led_strip_config_t *config) {
@@ -71,6 +80,11 @@ LedStripDriver::LedStripDriver(led_strip_config_t *config) {
   mWeatherWarningFadeInMs = 0;
   mWeatherWarningFadeOutMs = 0;
   mWeatherWarningOffDwellMs = 0;
+
+  mDefaultLoopColours[0] = (Colour*)&COL_DL_YELLOW;
+  mDefaultLoopColours[1] = (Colour*)&COL_DL_GREEN;
+  mDefaultLoopColours[2] = (Colour*)&COL_DL_BLUE;
+  mDefaultLoopColours[3] = (Colour*)&COL_DL_RED;
 };
 
 inline void reverseDutyCycleDirection(led_strip_state_t *state) {
@@ -97,23 +111,6 @@ void updateDutyCycle(led_strip_state_t *state, double increment, double decremen
     state->dutyCycle -= decrement;
   }
 }
-/*
-void calculatePulseOffsets(double *offsets, Colour *startCol) {
-  offsets[INDEX_RED] = startCol->getRed();
-  offsets[INDEX_GREEN] = startCol->getGreen();
-  offsets[INDEX_BLUE] = startCol->getBlue();
-}
-
-void calculatePulseGradients(double *gradients,
-                             double *offsets,
-                             Colour *startCol,
-                             Colour *endCol,
-                             uint32_t steps) {
-  gradients[INDEX_RED] = (double)(endCol->getRed() - offsets[INDEX_RED]) / (double)steps;
-  gradients[INDEX_GREEN] = (double)(endCol->getGreen() - offsets[INDEX_GREEN]) / (double)steps;
-  gradients[INDEX_BLUE] = (double)(endCol->getBlue() - offsets[INDEX_BLUE]) / (double)steps;
-}
-*/
 
 void LedStripDriver::handlePulsePattern(led_strip_state_t *state, uint8_t *values) {
   const uint32_t num_leds = mConfig->numLeds;
@@ -461,6 +458,69 @@ void LedStripDriver::handleWeatherPattern(led_strip_state_t *state, uint8_t *val
   }
 }
 
+Colour* getDefaultLoopStartColour(Colour** colours, uint32_t currentIndex) {
+  return colours[currentIndex];
+}
+
+Colour* getDefaultLoopEndColour(Colour** colours, uint32_t currentIndex) {
+  if (currentIndex >= (DL_NUM_COL-1)) {
+    return colours[0];
+  }
+
+  return colours[currentIndex+1];
+}
+
+void LedStripDriver::handleDefaultLoopPattern(led_strip_state_t *state, uint8_t *values) {
+  const uint32_t num_leds = mConfig->numLeds;
+  const uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
+  uint32_t currentStep;
+  int32_t offsets[COLOURS_PER_LED];
+  double gradients[COLOURS_PER_LED];
+  uint8_t valueRed, valueGreen, valueBlue;
+  Colour *startCol, *endCol;
+
+  if (state->counter >= mPeriodMs) {
+    state->counter = 0;
+
+    ++state->defaultLoopCurColIdx;
+
+    if (state->defaultLoopCurColIdx >= DL_NUM_COL) {
+      state->defaultLoopCurColIdx = 0;
+    }
+  }
+
+  startCol = getDefaultLoopStartColour(mDefaultLoopColours, state->defaultLoopCurColIdx);
+  endCol = getDefaultLoopEndColour(mDefaultLoopColours, state->defaultLoopCurColIdx);
+
+  currentStep = state->counter / mConfig->resolutionMs;
+
+  calcLinearOffsets(offsets, startCol);
+  calcLinearGradients(offsets, gradients, endCol, (double)steps);
+
+  // if (state->counter >= (mPeriodMs - mConfig->resolutionMs)) {
+  //   valueRed = endCol->getRed();
+  //   valueGreen = endCol->getGreen();
+  //   valueBlue = endCol->getBlue();
+  // } else {
+    valueRed = calcGradientColourValue(gradients[INDEX_RED],
+                                       offsets[INDEX_RED],
+                                       currentStep);
+    valueGreen = calcGradientColourValue(gradients[INDEX_GREEN],
+                                         offsets[INDEX_GREEN],
+                                         currentStep);
+    valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
+                                        offsets[INDEX_BLUE],
+                                        currentStep);
+  // }
+
+  for (uint32_t i=0; i < num_leds; i++) {
+    values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
+    values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
+    values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
+  }
+
+}
+
 void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
   const uint32_t numLedValues = COLOURS_PER_LED * mConfig->numLeds;
 
@@ -495,6 +555,10 @@ void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
 
     case weather:
       handleWeatherPattern(state, values);
+      break;
+
+    case defaultLoop:
+      handleDefaultLoopPattern(state, values);
       break;
 
     default:

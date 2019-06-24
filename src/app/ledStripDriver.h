@@ -3,9 +3,13 @@
 
 #include "colour.h"
 
+// Number of colours in default loop pattern
+#define DL_NUM_COL 4
+
 enum Pattern {
   blink,
   colour,
+  defaultLoop,
   gradient,
   progress,
   pulse,
@@ -44,6 +48,9 @@ typedef struct {
   uint8_t weatherRainPosition;
   uint32_t weatherWarningCounter;
   FadeState weatherWarningFadeState;
+
+
+  uint32_t defaultLoopCurColIdx;
 } led_strip_state_t;
 
 class LedStripDriver {
@@ -58,6 +65,7 @@ private:
   void handleGradientPattern(led_strip_state_t *state, uint8_t *values);
   void handleSnakePattern(led_strip_state_t *state, uint8_t *values);
   void handleWeatherPattern(led_strip_state_t *state, uint8_t *values);
+  void handleDefaultLoopPattern(led_strip_state_t *state, uint8_t *values);
 
 protected:
   uint32_t mPeriodMs;
@@ -87,6 +95,8 @@ protected:
   uint32_t mWeatherWarningFadeInMs;
   uint32_t mWeatherWarningFadeOutMs;
   uint32_t mWeatherWarningOffDwellMs;
+
+  Colour* mDefaultLoopColours[DL_NUM_COL];
 
 public:
   void initState(led_strip_state_t *state);

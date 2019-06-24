@@ -1912,3 +1912,211 @@ TEST(LedStripDriverInitStateTestGroup, initialisesWeatherWarningFadeState)
 
   LONGS_EQUAL(fadeIn, state.weatherWarningFadeState);
 }
+
+/***********************************************************************************************
+ * Default Loop pattern
+ **********************************************************************************************/
+
+TEST_GROUP(LedStripDriverPulseDefaultLoopTestGroup)
+{
+  void setup() {
+    const uint32_t valuesLength = MAX_LEDS * COLOURS_PER_LED;
+
+    driver = new LedStripDriver((led_strip_config_t*)&CONFIG_LEDS_3);
+    lastValuesWritten = new uint8_t[valuesLength];
+    memset(lastValuesWritten, 0, valuesLength);
+    memset(values, 0, valuesLength);
+  }
+
+  void teardown() {
+    delete driver;
+    delete[] lastValuesWritten;
+  }
+};
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, writesCorrectStartValues)
+{
+  const Colour& COLOUR_START = COLOUR_DL_YELLOW;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .defaultLoopCurColIdx = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_START, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, writesCorrectMiddleValues)
+{
+  const Colour& COLOUR_MID = Colour(127, 242, 0);
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 1,
+    .defaultLoopCurColIdx = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, writesCorrectEndValues)
+{
+  const Colour& COLOUR_END = COLOUR_DL_GREEN;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 2,
+    .defaultLoopCurColIdx = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_END, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, displaysCorrectStartColourForIndex1)
+{
+  const Colour& COLOUR_START_1 = COLOUR_DL_GREEN;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .defaultLoopCurColIdx = 1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_START_1, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, displaysCorrectEndColourForIndex1)
+{
+  const Colour& COLOUR_END_1 = COLOUR_DL_BLUE;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 2,
+    .defaultLoopCurColIdx = 1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_END_1, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, displaysCorrectStartColourForIndex2)
+{
+  const Colour& COLOUR_START_2 = COLOUR_DL_BLUE;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .defaultLoopCurColIdx = 2,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_START_2, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, displaysCorrectEndColourForIndex2)
+{
+  const Colour& COLOUR_END_2 = COLOUR_DL_RED;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 2,
+    .defaultLoopCurColIdx = 2,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_END_2, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, displaysCorrectStartColourForIndex3)
+{
+  const Colour& COLOUR_START_3 = COLOUR_DL_RED;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .defaultLoopCurColIdx = 3,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_START_3, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, resetsCounter)
+{
+  const uint32_t PERIOD_MS = 3;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS,
+    .defaultLoopCurColIdx = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(1, state.counter);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, incrementsColourIndexWhenCounterResets)
+{
+  const uint32_t PERIOD_MS = 3;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS,
+    .defaultLoopCurColIdx = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(1, state.defaultLoopCurColIdx);
+}
+
+TEST(LedStripDriverPulseDefaultLoopTestGroup, resetsColourIndex)
+{
+  const uint32_t PERIOD_MS = 3;
+
+  driver->pattern(Pattern::defaultLoop)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS,
+    .defaultLoopCurColIdx = DL_NUM_COL,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(0, state.defaultLoopCurColIdx);
+}
