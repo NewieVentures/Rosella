@@ -50,7 +50,7 @@ void ledStrip::setup() {
     ->colourOn((Colour*)&COLOUR_START)
     ->colourOff((Colour*)&COLOUR_END)
     ->windDirectionColour((Colour*)&COLOUR_WIND)
-    // ->timeout(PATTERN_TIMEOUT_MS)
+    ->timeout(PATTERN_TIMEOUT_MS)
     ->period(2000);
 
   // set up button

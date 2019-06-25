@@ -93,6 +93,7 @@ LedStripDriver::LedStripDriver(led_strip_config_t *config) {
 
   mPatternTimeoutMs = 0;
   mCurrentWindPattern = direction;
+  mClearPatternTimeout = false;
 };
 
 inline void reverseDutyCycleDirection(led_strip_state_t *state) {
@@ -600,6 +601,12 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
 void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
   const uint32_t numLedValues = COLOURS_PER_LED * mConfig->numLeds;
 
+  if (mClearPatternTimeout) {
+    mClearPatternTimeout = false;
+
+    state->timeoutCounter = 0;
+  }
+
   if (mPatternTimeoutMs > 0) {
     state->timeoutCounter += mConfig->resolutionMs;
 
@@ -674,7 +681,8 @@ void LedStripDriver::onPatternTimeout(led_strip_state_t *state, uint8_t *values)
 
     case weather:
     case wind:
-      // TODO start default loop pattern
+      pattern(Pattern::defaultLoop)
+        ->period(2000);
       break;
   }
 };
@@ -701,6 +709,7 @@ LedStripDriver* LedStripDriver::colourOff(Colour *colour) {
 
 LedStripDriver* LedStripDriver::pattern(Pattern pattern) {
   mPattern = pattern;
+  mClearPatternTimeout = true; // reset inactivity timeout
   return this;
 };
 

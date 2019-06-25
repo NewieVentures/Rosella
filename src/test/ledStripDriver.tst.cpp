@@ -2401,7 +2401,6 @@ TEST(LedStripDriverWindTestGroup, showsCorrectStartColoursForTransitionAfterTime
   const Colour& COLOUR_WIND_DIR = COLOUR_RED;
   const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
   const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
-  const uint32_t PATTERN_TIMEOUT_MS = 30000;
 
   driver->pattern(Pattern::wind)
         ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
@@ -2430,7 +2429,6 @@ TEST(LedStripDriverWindTestGroup, showsCorrectEndColoursForTransitionAfterTimeou
   const Colour& COLOUR_WIND_DIR = COLOUR_RED;
   const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
   const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
-  const uint32_t PATTERN_TIMEOUT_MS = 30000;
 
   driver->pattern(Pattern::wind)
         ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
@@ -2461,7 +2459,6 @@ TEST(LedStripDriverWindTestGroup, incrementsTransitionTimer)
   const Colour& COLOUR_WIND_DIR = COLOUR_RED;
   const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
   const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
-  const uint32_t PATTERN_TIMEOUT_MS = 30000;
 
   driver->pattern(Pattern::wind)
         ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
@@ -2489,7 +2486,6 @@ TEST(LedStripDriverWindTestGroup, doesntIncrementTransitionTimerWhenOnDirectionL
   const Colour& COLOUR_WIND_DIR = COLOUR_RED;
   const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
   const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
-  const uint32_t PATTERN_TIMEOUT_MS = 30000;
 
   driver->pattern(Pattern::wind)
         ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
