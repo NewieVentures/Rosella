@@ -50,6 +50,7 @@ void LedStripDriver::initState(led_strip_state_t *state) {
   state->defaultLoopCurColIdx = 0;
 
   state->windSpeedTransition = false;
+  state->windSpeedTimeoutCounter = 0;
 }
 
 LedStripDriver::LedStripDriver(led_strip_config_t *config) {
@@ -89,6 +90,9 @@ LedStripDriver::LedStripDriver(led_strip_config_t *config) {
   mDefaultLoopColours[3] = (Colour*)&COL_DL_RED;
 
   mWindDirectionColour = (Colour*)&COL_BLACK;
+
+  mPatternTimeoutMs = 0;
+  mCurrentWindPattern = direction;
 };
 
 inline void reverseDutyCycleDirection(led_strip_state_t *state) {
@@ -277,7 +281,7 @@ void LedStripDriver::handleSnakePattern(led_strip_state_t *state, uint8_t *value
   uint32_t start;
   uint32_t end;
 
-  if (mSnakeDirection == forward) {
+  if (mSnakeDirection == Direction::forward) {
     start = mSnakeLength > state->progress ? 0 : state->progress - mSnakeLength;
     end = state->progress;
   } else {
@@ -526,21 +530,54 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
   double gradients[COLOURS_PER_LED];
   uint8_t valueRed, valueGreen, valueBlue;
   Colour *startCol, *endCol;
-  /*
-  if (state->counter >= mPeriodMs) {
-    state->counter = 0;
 
-    ++state->defaultLoopCurColIdx;
+  if (mCurrentWindPattern == speed) {
+    state->windSpeedTimeoutCounter += mConfig->resolutionMs;
 
-    if (state->defaultLoopCurColIdx >= DL_NUM_COL) {
-      state->defaultLoopCurColIdx = 0;
+    if (state->windSpeedTimeoutCounter >= mWindSpeedTimeoutMs) {
+      state->windSpeedTimeoutCounter = 0;
+
+      state->windSpeedTransition = true;
+      state->fadeDirection = 1;
+      state-> counter = 0;
+      mCurrentWindPattern = direction;
     }
   }
-  */
+
+  if (state->counter >= mPeriodMs) {
+    // Don't reverse fade direction if wind speed transition finishing
+    if (!state->windSpeedTransition) {
+      state->fadeDirection *= -1;
+    }
+
+    state->windSpeedTransition = false;
+    state->counter = 0;
+  }
+
   if (mCurrentWindPattern == direction) {
-    valueRed = mWindDirectionColour->getRed();
-    valueGreen = mWindDirectionColour->getGreen();
-    valueBlue = mWindDirectionColour->getBlue();
+    if (state->windSpeedTransition) {
+      startCol = mColourOff;
+      endCol = mWindDirectionColour;
+
+      currentStep = state->counter / mConfig->resolutionMs;
+
+      calcLinearOffsets(offsets, startCol);
+      calcLinearGradients(offsets, gradients, endCol, (double)steps);
+
+      valueRed = calcGradientColourValue(gradients[INDEX_RED],
+                                         offsets[INDEX_RED],
+                                         currentStep);
+      valueGreen = calcGradientColourValue(gradients[INDEX_GREEN],
+                                           offsets[INDEX_GREEN],
+                                           currentStep);
+      valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
+                                          offsets[INDEX_BLUE],
+                                          currentStep);
+    } else {
+      valueRed = mWindDirectionColour->getRed();
+      valueGreen = mWindDirectionColour->getGreen();
+      valueBlue = mWindDirectionColour->getBlue();
+    }
   } else {
     if (state->windSpeedTransition) {
       startCol = mWindDirectionColour;
@@ -579,6 +616,18 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
 void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
   const uint32_t numLedValues = COLOURS_PER_LED * mConfig->numLeds;
 
+  if (mPatternTimeoutMs > 0) {
+    state->timeoutCounter += mConfig->resolutionMs;
+
+    if (state->timeoutCounter >= mPatternTimeoutMs) {
+      state->timeoutCounter = 0;
+      mPatternTimeoutMs = 0; // prevent timeout from occurring again
+      onPatternTimeout(state, values);
+    }
+  } else {
+    state->timeoutCounter = 0; // ensure pattern changes dont resume a previous counter value
+  }
+
   switch(mPattern) {
     case blink:
       handleBlinkPattern(state, values);
@@ -612,21 +661,38 @@ void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
       handleWeatherPattern(state, values);
       break;
 
-    case defaultLoop:
-      handleDefaultLoopPattern(state, values);
-      break;
-
     case wind:
       handleWindPattern(state, values);
       break;
 
     default:
+    case defaultLoop:
+      handleDefaultLoopPattern(state, values);
       break;
   }
 
   mConfig->writeValueFn(values, numLedValues);
 
   state->counter += mConfig->resolutionMs;
+};
+
+void LedStripDriver::onPatternTimeout(led_strip_state_t *state, uint8_t *values) {
+  switch(mPattern) {
+    case blink:
+    case colour:
+    case defaultLoop:
+    case gradient:
+    case progress:
+    case pulse:
+    case snake:
+    case strobe:
+      break;
+
+    case weather:
+    case wind:
+      // TODO start default loop pattern
+      break;
+  }
 };
 
 LedStripDriver* LedStripDriver::period(uint32_t valueMs) {
@@ -653,6 +719,13 @@ LedStripDriver* LedStripDriver::pattern(Pattern pattern) {
   mPattern = pattern;
   return this;
 };
+
+  /* Set a pattern timeout, behaviour set in onPatternTimeout() */
+LedStripDriver* LedStripDriver::timeout(uint32_t timeoutMs) {
+  mPatternTimeoutMs = timeoutMs;
+  return this;
+}
+
 
 /* Used by snake pattern to set length of snake in LEDs */
 LedStripDriver* LedStripDriver::length(uint8_t numLeds) {
@@ -775,10 +848,20 @@ LedStripDriver* LedStripDriver::windDirectionColour(Colour *colour) {
   return this;
 }
 
+/* Used by wind pattern to set timeout for speed layer */
+LedStripDriver* LedStripDriver::windSpeedTimeout(uint32_t timeoutMs) {
+  mWindSpeedTimeoutMs = timeoutMs;
+  return this;
+}
+
 LedStripDriver* LedStripDriver::showWindSpeed(led_strip_state_t *state, uint32_t timeoutMs) {
   state->windSpeedTransition = true;
+  state->counter = 0;
+  state->fadeDirection = 1;
+  state->timeoutCounter = 0;
   mCurrentWindPattern = speed;
   mWindSpeedTimeoutMs = timeoutMs;
+  // mPatternTimeoutMs = timeoutMs;
 
   return this;
 }

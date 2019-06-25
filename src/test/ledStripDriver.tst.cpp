@@ -1867,7 +1867,7 @@ TEST(LedStripDriverInitStateTestGroup, initialisesDutyDirection)
 
   LONGS_EQUAL(1, state.dutyDirection);
 }
-
+/*
 TEST(LedStripDriverInitStateTestGroup, initialisesWeatherTempFadeDirection)
 {
   led_strip_state_t state;
@@ -1912,7 +1912,7 @@ TEST(LedStripDriverInitStateTestGroup, initialisesWeatherWarningFadeState)
 
   LONGS_EQUAL(fadeIn, state.weatherWarningFadeState);
 }
-
+*/
 /***********************************************************************************************
  * Default Loop pattern
  **********************************************************************************************/
@@ -2157,7 +2157,7 @@ TEST(LedStripDriverWindTestGroup, writesCorrectStartValues)
   led_strip_state_t state = {
     .counter = 0,
     .fadeDirection = 1,
-    .windSpeedTransition = true,
+    .windSpeedTransition = false,
   };
 
   driver->onTimerFired(&state, values);
@@ -2170,7 +2170,6 @@ TEST(LedStripDriverWindTestGroup, showsCorrectStartWindSpeedColourWhenCommanded)
   const Colour& COLOUR_WIND_DIR = COLOUR_RED;
   const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
   const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
-  const Colour& COLOUR_MID = Colour(127, 127, 0);
 
   driver->pattern(Pattern::wind)
         ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
@@ -2179,12 +2178,11 @@ TEST(LedStripDriverWindTestGroup, showsCorrectStartWindSpeedColourWhenCommanded)
         ->period(3);
 
   led_strip_state_t state = {
-    .counter = 2,
     .fadeDirection = 1,
-    .windSpeedTransition = true,
   };
 
   driver->showWindSpeed(&state, 3);
+  state.counter = 2;
 
   driver->onTimerFired(&state, values);
 
@@ -2192,5 +2190,324 @@ TEST(LedStripDriverWindTestGroup, showsCorrectStartWindSpeedColourWhenCommanded)
   verify_colours((Colour*)&COLOUR_WIND_SPD_1, lastValuesWritten, CONFIG_LEDS_3.numLeds);
 }
 
-// resets counter when wind speed triggered
-// sets windSpeedTransition = false after timeout
+TEST(LedStripDriverWindTestGroup, showsCorrectEndWindSpeedColourAfterTransition)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.counter = 2;
+  state.windSpeedTransition = false; // transition finished
+
+  driver->onTimerFired(&state, values);
+
+  //should fade from direction colour to first speed colour
+  verify_colours((Colour*)&COLOUR_WIND_SPD_2, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, resetsCounterWhenWindSpeedTriggered)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 1,
+    .fadeDirection = 1,
+    .windSpeedTransition = false,
+  };
+
+  driver->showWindSpeed(&state, 3);
+
+  LONGS_EQUAL_TEXT(0, state.counter, "Counter not cleared when showWindSpeed() triggered!");
+}
+
+TEST(LedStripDriverWindTestGroup, clearsWindSpeedTransitionAfterTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.counter = 3;
+
+  driver->onTimerFired(&state, values);
+
+  CHECK_FALSE_TEXT(state.windSpeedTransition, "windSpeedTransition not cleared after timeout!");
+}
+
+TEST(LedStripDriverWindTestGroup, resetsCounterAfterWindSpeedTransitionTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.counter = 3;
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL_TEXT(1, state.counter, "Counter not cleared after transition timeout!");
+}
+
+TEST(LedStripDriverWindTestGroup, reversesFadeDirectionAfterPositiveTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.windSpeedTransition = false; // Transition already finished
+  state.counter = 3;
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL_TEXT(-1, state.fadeDirection, "fade direction not changed after timeout!");
+}
+
+TEST(LedStripDriverWindTestGroup, doesntReverseFadeDirectionAfterTransitionTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.counter = 3;
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL_TEXT(1, state.fadeDirection, "fade direction incorrectly reversed after timeout!");
+}
+
+TEST(LedStripDriverWindTestGroup, showsCorrectEndColourForReverseDirection)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->windSpeedTimeout(3000)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.windSpeedTransition = false; // Transition already finished
+  state.counter = 2;
+  state.fadeDirection = -1;
+
+  driver->onTimerFired(&state, values);
+
+  //should fade from direction colour to first speed colour
+  verify_colours((Colour*)&COLOUR_WIND_SPD_1, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, setsStateCorrectlyAfterSpeedLayerTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const uint32_t SPEED_TIMEOUT_MS = 30000;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->windSpeedTimeout(SPEED_TIMEOUT_MS)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+    .windSpeedTimeoutCounter = SPEED_TIMEOUT_MS,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.windSpeedTransition = false; // Transition already finished
+  state.counter = 0;
+
+  driver->onTimerFired(&state, values);
+
+  CHECK_TRUE_TEXT(state.windSpeedTransition, "windSpeedTransition not set after timeout!");
+  LONGS_EQUAL_TEXT(1, state.fadeDirection, "fadeDirection not set correctly after timeout!");
+  LONGS_EQUAL_TEXT(1, state.counter, "counter not reset after pattern timeout!");
+  CHECK_EQUAL_TEXT(WindPattern::direction, driver->getCurrentWindPattern(), "wind pattern not changed after timeout!");
+  LONGS_EQUAL_TEXT(0, driver->getPatternTimeout(), "pattern timeout not cleared after timeout!");
+}
+
+TEST(LedStripDriverWindTestGroup, showsCorrectStartColoursForTransitionAfterTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const uint32_t PATTERN_TIMEOUT_MS = 30000;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->windSpeedTimeout(PATTERN_TIMEOUT_MS)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .fadeDirection = 1,
+    .windSpeedTimeoutCounter = PATTERN_TIMEOUT_MS,
+  };
+
+  driver->showWindSpeed(&state, 3);
+  state.windSpeedTransition = false; // Transition already finished
+  state.counter = 1;
+
+  driver->onTimerFired(&state, values);
+
+  //should fade from direction colour to first speed colour
+  verify_colours((Colour*)&COLOUR_WIND_SPD_2, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, showsCorrectEndColoursForTransitionAfterTimeout)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const uint32_t PATTERN_TIMEOUT_MS = 30000;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->timeout(0) // reset after timeout
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 3,
+    .fadeDirection = 1,
+    .windSpeedTransition = true,
+    .timeoutCounter = 0,
+  };
+
+  // driver->showWindSpeed(&state, 3);
+  // state.windSpeedTransition = true; // Transition already finished
+  // state.counter = 2;
+
+  driver->onTimerFired(&state, values);
+
+  //should fade from direction colour to first speed colour
+  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, incrementsTransitionTimer)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const uint32_t PATTERN_TIMEOUT_MS = 30000;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+    .windSpeedTransition = true,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->showWindSpeed(&state, 3);
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL_TEXT(1, state.windSpeedTimeoutCounter, "Transition timeout counter not incremented!");
+}
+
+TEST(LedStripDriverWindTestGroup, doesntIncrementTransitionTimerWhenOnDirectionLayer)
+{
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const uint32_t PATTERN_TIMEOUT_MS = 30000;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->period(3);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+    .windSpeedTransition = true,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL_TEXT(0,
+                   state.windSpeedTimeoutCounter,
+                   "Transition timeout counter incremented when on direction layer!");
+}

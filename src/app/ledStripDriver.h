@@ -59,11 +59,14 @@ typedef struct {
   uint32_t defaultLoopCurColIdx;
 
   bool windSpeedTransition;
+  uint32_t timeoutCounter; // Pattern timeout
+  uint32_t windSpeedTimeoutCounter;
 } led_strip_state_t;
 
 class LedStripDriver {
 private:
   led_strip_config_t* mConfig;
+  uint32_t mPatternTimeoutMs;
 
   void handleBlinkPattern(led_strip_state_t *state, uint8_t *values);
   void handlePulsePattern(led_strip_state_t *state, uint8_t *values);
@@ -115,11 +118,15 @@ public:
   void initState(led_strip_state_t *state);
   LedStripDriver(led_strip_config_t *config);
   void onTimerFired(led_strip_state_t *state, uint8_t *values);
+  void onPatternTimeout(led_strip_state_t *state, uint8_t *values);
 
   LedStripDriver* period(uint32_t valueMs);
   LedStripDriver* colourOn(Colour *colour);
   LedStripDriver* colourOff(Colour *colour);
   LedStripDriver* pattern(Pattern pattern);
+
+  /* Set a pattern timeout, behaviour set in onPatternTimeout() */
+  LedStripDriver* timeout(uint32_t timeoutMs);
 
   /*
    * Used by pulse pattern to set % of time spent turning on vs off
@@ -191,6 +198,9 @@ public:
   /* Used by wind pattern to set wind direction colour */
   LedStripDriver* windDirectionColour(Colour *colour);
 
+  /* Used by wind pattern to set timeout for speed layer */
+  LedStripDriver* windSpeedTimeout(uint32_t timeoutMs);
+
   /* Used by wind pattern to show the wind speed for a certain time */
   LedStripDriver* showWindSpeed(led_strip_state_t *state, uint32_t timeoutMs);
 
@@ -217,6 +227,8 @@ public:
 
   uint32_t getSnakeLength() { return mSnakeLength; };
   Direction getSnakeDirection() { return mSnakeDirection; };
+  WindPattern getCurrentWindPattern() { return mCurrentWindPattern; };
+  uint32_t getPatternTimeout() { return mPatternTimeoutMs; };
 };
 
 #endif

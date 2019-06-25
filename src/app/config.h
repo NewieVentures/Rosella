@@ -12,6 +12,9 @@
 /* #define COLOUR_ORDER_RRGGBB */
 #define COLOUR_ORDER_GGRRBB
 
+#define WIND_PATTERN_TIMEOUT_MS 12000
+#define GPIO_BUTTON B5
+
 /**********************************
  * Status LED
  *********************************/
