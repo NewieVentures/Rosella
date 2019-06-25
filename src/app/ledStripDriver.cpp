@@ -534,6 +534,7 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
   if (mCurrentWindPattern == speed) {
     state->windSpeedTimeoutCounter += mConfig->resolutionMs;
 
+    // return to wind direction pattern after timeout
     if (state->windSpeedTimeoutCounter >= mWindSpeedTimeoutMs) {
       state->windSpeedTimeoutCounter = 0;
 
@@ -554,32 +555,15 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
     state->counter = 0;
   }
 
-  if (mCurrentWindPattern == direction) {
-    if (state->windSpeedTransition) {
+  if (mCurrentWindPattern == direction && !state->windSpeedTransition) {
+    valueRed = mWindDirectionColour->getRed();
+    valueGreen = mWindDirectionColour->getGreen();
+    valueBlue = mWindDirectionColour->getBlue();
+  } else {
+    if (mCurrentWindPattern == direction) {
       startCol = mColourOff;
       endCol = mWindDirectionColour;
-
-      currentStep = state->counter / mConfig->resolutionMs;
-
-      calcLinearOffsets(offsets, startCol);
-      calcLinearGradients(offsets, gradients, endCol, (double)steps);
-
-      valueRed = calcGradientColourValue(gradients[INDEX_RED],
-                                         offsets[INDEX_RED],
-                                         currentStep);
-      valueGreen = calcGradientColourValue(gradients[INDEX_GREEN],
-                                           offsets[INDEX_GREEN],
-                                           currentStep);
-      valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
-                                          offsets[INDEX_BLUE],
-                                          currentStep);
-    } else {
-      valueRed = mWindDirectionColour->getRed();
-      valueGreen = mWindDirectionColour->getGreen();
-      valueBlue = mWindDirectionColour->getBlue();
-    }
-  } else {
-    if (state->windSpeedTransition) {
+    } else if (state->windSpeedTransition) {
       startCol = mWindDirectionColour;
       endCol = mColourOn;
     } else if (state->fadeDirection > 0) {
