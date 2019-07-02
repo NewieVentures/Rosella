@@ -541,7 +541,7 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
 
       state->windSpeedTransition = true;
       state->fadeDirection = 1;
-      state-> counter = 0;
+      state->counter = 0;
       mCurrentWindPattern = direction;
     }
   }
