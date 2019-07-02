@@ -525,7 +525,7 @@ void LedStripDriver::handleDefaultLoopPattern(led_strip_state_t *state, uint8_t 
 
 void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values) {
   const uint32_t num_leds = mConfig->numLeds;
-  const uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
+  uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
   uint32_t currentStep;
   int32_t offsets[COLOURS_PER_LED];
   double gradients[COLOURS_PER_LED];
@@ -556,6 +556,8 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
     state->counter = 0;
   }
 
+  currentStep = state->counter / mConfig->resolutionMs;
+
   if (mCurrentWindPattern == direction && !state->windSpeedTransition) {
     valueRed = mWindDirectionColour->getRed();
     valueGreen = mWindDirectionColour->getGreen();
@@ -575,8 +577,6 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
       endCol = mColourOn;
     }
 
-    currentStep = state->counter / mConfig->resolutionMs;
-
     calcLinearOffsets(offsets, startCol);
     calcLinearGradients(offsets, gradients, endCol, (double)steps);
 
@@ -595,6 +595,77 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
     values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
     values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
     values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
+  }
+
+  state->weatherWarningCounter += mConfig->resolutionMs;
+
+  switch(state->weatherWarningFadeState) {
+    case fadeIn:
+      if (state->weatherWarningCounter >= mWeatherWarningFadeInMs) {
+        state->weatherWarningCounter = 0;
+        state->weatherWarningFadeState = fadeOut;
+      }
+      break;
+
+    case fadeOut:
+      if (state->weatherWarningCounter >= mWeatherWarningFadeOutMs) {
+        state->weatherWarningCounter = 0;
+        state->weatherWarningFadeState = offDwell;
+      }
+      break;
+
+    case offDwell:
+      if (state->weatherWarningCounter >= mWeatherWarningOffDwellMs) {
+        state->weatherWarningCounter = 0;
+        state->weatherWarningFadeState = fadeIn;
+      }
+      break;
+
+  }
+
+  if (mWeatherWarningFadeInMs > 0) {
+    Colour warningColourStart = COLOUR_BLACK;
+
+    if (state->weatherWarningFadeState == fadeIn) {
+      steps = mWeatherWarningFadeInMs / mConfig->resolutionMs;
+      currentStep = state->weatherWarningCounter / mConfig->resolutionMs;
+
+      calcLinearOffsets(offsets, &warningColourStart);
+      calcLinearGradients(offsets, gradients, mWeatherWarningColour, (double)steps);
+
+      valueRed = calcGradientColourValue(gradients[INDEX_RED], offsets[INDEX_RED], currentStep);
+      valueGreen = calcGradientColourValue(gradients[INDEX_GREEN], offsets[INDEX_GREEN], currentStep);
+      valueBlue = calcGradientColourValue(gradients[INDEX_BLUE], offsets[INDEX_BLUE], currentStep);
+    } else if (state->weatherWarningFadeState == fadeOut) {
+      steps = mWeatherWarningFadeOutMs / mConfig->resolutionMs;
+      currentStep = state->weatherWarningCounter / mConfig->resolutionMs;
+
+      calcLinearOffsets(offsets, mWeatherWarningColour);
+      calcLinearGradients(offsets, gradients, &warningColourStart, (double)steps);
+
+      valueRed = calcGradientColourValue(gradients[INDEX_RED], offsets[INDEX_RED], currentStep);
+      valueGreen = calcGradientColourValue(gradients[INDEX_GREEN], offsets[INDEX_GREEN], currentStep);
+      valueBlue = calcGradientColourValue(gradients[INDEX_BLUE], offsets[INDEX_BLUE], currentStep);
+    } else {
+      valueRed = warningColourStart.getRed();
+      valueGreen = warningColourStart.getGreen();
+      valueBlue = warningColourStart.getBlue();
+    }
+
+    if (currentStep == (steps - 1) && (valueRed | valueGreen | valueBlue) > 0) {
+      valueRed = mWeatherWarningColour->getRed();
+      valueGreen = mWeatherWarningColour->getGreen();
+      valueBlue = mWeatherWarningColour->getBlue();
+    }
+
+    //black is transparent for the warning layer
+    if ((valueRed | valueGreen | valueBlue) > 0) {
+      for (uint32_t i=0; i < num_leds; i++) {
+        values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
+        values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
+        values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
+      }
+    }
   }
 }
 

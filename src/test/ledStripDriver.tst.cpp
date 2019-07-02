@@ -41,6 +41,7 @@ static const led_strip_config_t CONFIG_LEDS_6 = {
 };
 
 #define WEATHER_TEST_LED_CONFIG CONFIG_LEDS_6
+#define WIND_TEST_LED_CONFIG CONFIG_LEDS_3
 
 static void verify_colours(Colour *expected,
                            uint8_t *values,
@@ -1192,7 +1193,7 @@ TEST(LedStripDriverWeatherTestGroup, resetsRainPositionCorrectly)
     .counter = 0,
     .fadeDirection = 1,
     .weatherRainCounter = RAIN_INC_DELAY_MS - 1,
-    .weatherRainPosition = (uint8_t)WEATHER_TEST_LED_CONFIG.numLeds - 1,
+    .weatherRainPosition = (uint8_t)(WEATHER_TEST_LED_CONFIG.numLeds - 1),
   };
 
   driver->onTimerFired(&state, values);
@@ -1867,7 +1868,7 @@ TEST(LedStripDriverInitStateTestGroup, initialisesDutyDirection)
 
   LONGS_EQUAL(1, state.dutyDirection);
 }
-/*
+
 TEST(LedStripDriverInitStateTestGroup, initialisesWeatherTempFadeDirection)
 {
   led_strip_state_t state;
@@ -1912,7 +1913,7 @@ TEST(LedStripDriverInitStateTestGroup, initialisesWeatherWarningFadeState)
 
   LONGS_EQUAL(fadeIn, state.weatherWarningFadeState);
 }
-*/
+
 /***********************************************************************************************
  * Default Loop pattern
  **********************************************************************************************/
@@ -2162,7 +2163,7 @@ TEST(LedStripDriverWindTestGroup, writesCorrectStartValues)
 
   driver->onTimerFired(&state, values);
 
-  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
 
 TEST(LedStripDriverWindTestGroup, showsCorrectStartWindSpeedColourWhenCommanded)
@@ -2187,7 +2188,7 @@ TEST(LedStripDriverWindTestGroup, showsCorrectStartWindSpeedColourWhenCommanded)
   driver->onTimerFired(&state, values);
 
   //should fade from direction colour to first speed colour
-  verify_colours((Colour*)&COLOUR_WIND_SPD_1, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+  verify_colours((Colour*)&COLOUR_WIND_SPD_1, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
 
 TEST(LedStripDriverWindTestGroup, showsCorrectEndWindSpeedColourAfterTransition)
@@ -2213,7 +2214,7 @@ TEST(LedStripDriverWindTestGroup, showsCorrectEndWindSpeedColourAfterTransition)
   driver->onTimerFired(&state, values);
 
   //should fade from direction colour to first speed colour
-  verify_colours((Colour*)&COLOUR_WIND_SPD_2, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+  verify_colours((Colour*)&COLOUR_WIND_SPD_2, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
 
 TEST(LedStripDriverWindTestGroup, resetsCounterWhenWindSpeedTriggered)
@@ -2361,7 +2362,7 @@ TEST(LedStripDriverWindTestGroup, showsCorrectEndColourForReverseDirection)
   driver->onTimerFired(&state, values);
 
   //should fade from direction colour to first speed colour
-  verify_colours((Colour*)&COLOUR_WIND_SPD_1, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+  verify_colours((Colour*)&COLOUR_WIND_SPD_1, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
 
 TEST(LedStripDriverWindTestGroup, setsStateCorrectlyAfterSpeedLayerTimeout)
@@ -2421,7 +2422,7 @@ TEST(LedStripDriverWindTestGroup, showsCorrectStartColoursForTransitionAfterTime
   driver->onTimerFired(&state, values);
 
   //should fade from direction colour to first speed colour
-  verify_colours((Colour*)&COLOUR_WIND_SPD_2, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+  verify_colours((Colour*)&COLOUR_WIND_SPD_2, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
 
 TEST(LedStripDriverWindTestGroup, showsCorrectEndColoursForTransitionAfterTimeout)
@@ -2451,7 +2452,7 @@ TEST(LedStripDriverWindTestGroup, showsCorrectEndColoursForTransitionAfterTimeou
   driver->onTimerFired(&state, values);
 
   //should fade from direction colour to first speed colour
-  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, CONFIG_LEDS_3.numLeds);
+  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
 
 TEST(LedStripDriverWindTestGroup, incrementsTransitionTimer)
@@ -2506,4 +2507,491 @@ TEST(LedStripDriverWindTestGroup, doesntIncrementTransitionTimerWhenOnDirectionL
   LONGS_EQUAL_TEXT(0,
                    state.windSpeedTimeoutCounter,
                    "Transition timeout counter incremented when on direction layer!");
+}
+
+TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningInitialState)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = 0,
+    .weatherWarningFadeState = fadeIn,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  //'transparent' at first
+  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningMidFadeInState)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+  const Colour COLOUR_MID = Colour(127, 127, 127);
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_IN_MS/2 - 1,
+    .weatherWarningFadeState = fadeIn,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningEndOfFadeInState)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_IN_MS - 2,
+    .weatherWarningFadeState = fadeIn,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_WARNING, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, incrementsWeatherWarningCounter)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = 0,
+    .weatherWarningFadeState = fadeIn,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(WIND_TEST_LED_CONFIG.resolutionMs, state.weatherWarningCounter);
+}
+
+TEST(LedStripDriverWindTestGroup, resetsWeatherWarningCounterAfterFadeIn)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_IN_MS - 1,
+    .weatherWarningFadeState = fadeIn,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(0, state.weatherWarningCounter);
+}
+
+TEST(LedStripDriverWindTestGroup, reversesWeatherWarningFadeDirectionAfterFadeIn)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_IN_MS - WIND_TEST_LED_CONFIG.resolutionMs,
+    .weatherWarningFadeState = fadeIn,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(fadeOut, state.weatherWarningFadeState);
+}
+
+TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningMidFadeOutState)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+  const Colour& COLOUR_MID = Colour(127, 127, 127);
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_OUT_MS/2 - WIND_TEST_LED_CONFIG.resolutionMs,
+    .weatherWarningFadeState = fadeOut,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningOffDwellTime)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_OFF_DWELL_MS - (2 * WIND_TEST_LED_CONFIG.resolutionMs),
+    .weatherWarningFadeState = offDwell,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverWindTestGroup, setsWarningFadeStateToFadeInAfterOffDwell)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_OFF_DWELL_MS -  WIND_TEST_LED_CONFIG.resolutionMs,
+    .weatherWarningFadeState = offDwell,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  CHECK_EQUAL(fadeIn, state.weatherWarningFadeState);
+}
+
+TEST(LedStripDriverWindTestGroup, setsWarningFadeStateToOffDwellAfterFadeOut)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_OUT_MS -  WIND_TEST_LED_CONFIG.resolutionMs,
+    .weatherWarningFadeState = fadeOut,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  CHECK_EQUAL(offDwell, state.weatherWarningFadeState);
+}
+
+TEST(LedStripDriverWindTestGroup, resetsWeatherWarningCounterAfterFadeOut)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_FADE_OUT_MS - 1,
+    .weatherWarningFadeState = fadeOut,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(0, state.weatherWarningCounter);
+}
+
+TEST(LedStripDriverWindTestGroup, resetsWeatherWarningCounterAfterOffDwell)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = WARNING_OFF_DWELL_MS - 1,
+    .weatherWarningFadeState = offDwell,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(0, state.weatherWarningCounter);
+}
+
+// detects a bug where the warning colour was written when currentStep == (steps - 1) when in off dwell
+TEST(LedStripDriverWindTestGroup, shouldNotWriteWarningEndColourAtCounterIfInOffDwell)
+{
+  const uint32_t WARNING_FADE_IN_MS = 500;
+  const uint32_t WARNING_FADE_OUT_MS = 2000;
+  const uint32_t WARNING_OFF_DWELL_MS = 1000;
+  const uint32_t PERIOD_MS = 1000;
+
+  const Colour& COLOUR_WIND_DIR = COLOUR_RED;
+  const Colour& COLOUR_WIND_SPD_1 = COLOUR_GREEN;
+  const Colour& COLOUR_WIND_SPD_2 = COLOUR_BLUE;
+  const Colour& COLOUR_WARNING = COLOUR_WHITE;
+
+  driver->pattern(Pattern::wind)
+        ->windDirectionColour((Colour*)&COLOUR_WIND_DIR)
+        ->colourOn((Colour*)&COLOUR_WIND_SPD_1)
+        ->colourOff((Colour*)&COLOUR_WIND_SPD_2)
+        ->warningColour((Colour*)&COLOUR_WARNING)
+        ->warningFadeIn(WARNING_FADE_IN_MS)
+        ->warningFadeOut(WARNING_FADE_OUT_MS)
+        ->warningOffDwell(WARNING_OFF_DWELL_MS)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS - 2,
+    .fadeDirection = 1,
+
+    .weatherWarningCounter = 0,
+    .weatherWarningFadeState = offDwell,
+
+    .windSpeedTransition = false,
+    .timeoutCounter = 0,
+    .windSpeedTimeoutCounter = 0,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
 }
