@@ -7,6 +7,13 @@ uint8_t hexColourStrValToInt(String hexStr) {
   return (uint8_t) hexStrToInt(hexStr);
 }
 
+Colour::Colour() {
+  mRed = 0;
+  mGreen = 0;
+  mBlue = 0;
+  mIsValid = false;
+}
+
 Colour::Colour(uint8_t red, uint8_t green, uint8_t blue) {
   mRed = red;
   mGreen = green;
@@ -42,8 +49,24 @@ uint8_t Colour::getBlue() const {
   return mBlue;
 }
 
+bool Colour::isBlack() {
+  return (mRed == 0 && mGreen == 0 && mBlue == 0);
+}
+
 bool Colour::isValid() {
   return mIsValid;
+}
+
+void Colour::update(uint8_t red, uint8_t green, uint8_t blue) {
+  mRed = red;
+  mGreen = green;
+  mBlue = blue;
+}
+
+void Colour::copy(Colour* source) {
+  mRed = source->getRed();
+  mGreen = source->getGreen();
+  mBlue = source->getBlue();
 }
 
 bool operator==(const Colour& lhs, const Colour& rhs) {
