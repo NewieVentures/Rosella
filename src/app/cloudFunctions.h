@@ -21,6 +21,7 @@ class CloudFunctions {
 
   int blink(String args);
   int colour(String args);
+  int defaultLoop(String args);
   int strobe(String args);
   int gradient(String args);
   int progress(String args);

@@ -55,6 +55,11 @@ TEST(CloudFunctionsTestGroup, registersFunctions)
     .withParameter("cls", cloudFunctions);
 
   mock().expectOneCall("registerFunction")
+    .withParameter("name", "defaultLoop")
+    .withParameter("fn", (void*)&CloudFunctions::defaultLoop)
+    .withParameter("cls", cloudFunctions);
+
+  mock().expectOneCall("registerFunction")
     .withParameter("name", "strobe")
     .withParameter("fn", (void*)&CloudFunctions::strobe)
     .withParameter("cls", cloudFunctions);
@@ -369,6 +374,27 @@ TEST(CloudFunctionsTestGroup, pulsePassesCorrectArgsToLedDriver)
   LONGS_EQUAL(PERIOD_MS, ledStripDriver->getPeriod());
   STRCMP_EQUAL(COLOUR_ON.toString(), ledStripDriver->getColourOn()->toString());
   STRCMP_EQUAL(COLOUR_OFF.toString(), ledStripDriver->getColourOff()->toString());
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, defaultLoopReturnsSuccessWithNoArguments)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_SUC,
+              cloudFunctions->defaultLoop(""));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, defaultLoopPassesCorrectArgsToLedDriver)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+  cloudFunctions->defaultLoop("");
+
+  CHECK(Pattern::defaultLoop == ledStripDriver->getPattern());
+  LONGS_EQUAL(2000, ledStripDriver->getPeriod());
 
   delete cloudFunctions;
 }

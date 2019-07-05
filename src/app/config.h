@@ -16,6 +16,8 @@
 #define WIND_PATTERN_TIMEOUT_MS 12000
 #define GPIO_BUTTON B5
 
+#define DEFAULT_LOOP_PERIOD_MS 2000
+
 /**********************************
  * Status LED
  *********************************/

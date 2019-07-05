@@ -1,3 +1,4 @@
+#include "config.h"
 #include "cloudFunctions.h"
 #include "argParser.h"
 #include "colours.h"
@@ -231,6 +232,7 @@ CloudFunctions::CloudFunctions(LedStripDriver *ledDriver, int (*regFn)(String, i
 
   regFn(String("blink"), (&CloudFunctions::blink), this);
   regFn(String("colour"), (&CloudFunctions::colour), this);
+  regFn(String("defaultLoop"), (&CloudFunctions::defaultLoop), this);
   regFn(String("strobe"), (&CloudFunctions::strobe), this);
   regFn(String("gradient"), (&CloudFunctions::gradient), this);
   regFn(String("progress"), (&CloudFunctions::progress), this);
@@ -305,6 +307,13 @@ int CloudFunctions::colour(String args) {
   }
 
   return result;
+}
+
+int CloudFunctions::defaultLoop(String args) {
+  mLedDriver->pattern(Pattern::defaultLoop)
+    ->period(DEFAULT_LOOP_PERIOD_MS);
+
+  return 0;
 }
 
 int CloudFunctions::strobe(String args) {

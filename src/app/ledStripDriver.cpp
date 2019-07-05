@@ -753,7 +753,7 @@ void LedStripDriver::onPatternTimeout(led_strip_state_t *state, uint8_t *values)
     case weather:
     case wind:
       pattern(Pattern::defaultLoop)
-        ->period(2000);
+        ->period(DEFAULT_LOOP_PERIOD_MS);
       break;
   }
 };
