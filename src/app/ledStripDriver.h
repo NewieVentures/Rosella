@@ -231,9 +231,17 @@ public:
   WindPattern getCurrentWindPattern() { return mCurrentWindPattern; };
   uint32_t getPatternTimeout() { return mPatternTimeoutMs; };
 
+  uint32_t getWeatherTempFadeIntervalSecs() { return mWeatherTempFadeIntervalSecs; };
+  uint8_t getWeatherRainBandHeightLeds() { return mWeatherRainBandHeightLeds; };
+  uint32_t getWeatherRainBandIncDelayMs() { return mWeatherRainBandIncDelayMs; };
+  uint8_t getWeatherRainBandSpacingLeds() { return mWeatherRainBandSpacingLeds; };
+  Colour* getWeatherRainBandColour() { return mWeatherRainBandColour; };
+  Direction getWeatherRainDirection() { return mWeatherRainDirection; };
+
+  Colour* getWeatherWarningColour() { return mWeatherWarningColour; }
   uint32_t getWeatherWarningFadeIn() { return mWeatherWarningFadeInMs; };
   uint32_t getWeatherWarningFadeOut() { return mWeatherWarningFadeOutMs; };
-  uint32_t getWeatherWarningOffDwell() { return mWeatherWarningOffDwellMs; }
+  uint32_t getWeatherWarningOffDwell() { return mWeatherWarningOffDwellMs; };
 
   Colour* getWindDirectionColour() { return mWindDirectionColour; };
 };

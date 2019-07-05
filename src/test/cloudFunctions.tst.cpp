@@ -469,4 +469,107 @@ TEST(CloudFunctionsTestGroup, windDoesntChangePatternOnParseError)
   delete cloudFunctions;
 }
 
+TEST(CloudFunctionsTestGroup, weatherPassesCorrectArgsToLedDriver)
+{
+  uint32_t TEMP_FADE_SECS = 10;
+  uint32_t RAIN_BAND_DEPTH = 2;
+  uint32_t RAIN_BAND_SPEED = 800;
+  uint32_t RAIN_BAND_SPACING = 3;
+  uint32_t WARN_FADE_IN = 2000;
+  uint32_t WARN_FADE_OUT = 3000;
+  uint32_t WARN_OFF_DWELL = 4000;
+
+  Colour COLOUR_TEMP_1 = Colour("#29A5C3");
+  Colour COLOUR_TEMP_2 = Colour("#2012BA");
+  Colour COLOUR_RAIN = Colour("#FFFFFF");
+  Colour COLOUR_WARNING = Colour("#FFFFFF");
+  char args[ARGS_LEN_MAX];
+
+  sprintf(args, "%s,%s,%d,%d,%d,%d,%d,%d,%d",
+          COLOUR_TEMP_1.toString().c_str(),
+          COLOUR_TEMP_2.toString().c_str(),
+          TEMP_FADE_SECS,
+          RAIN_BAND_DEPTH,
+          RAIN_BAND_SPEED,
+          RAIN_BAND_SPACING,
+          WARN_FADE_IN,
+          WARN_FADE_OUT,
+          WARN_OFF_DWELL);
+
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+  cloudFunctions->weather(args);
+
+  CHECK_TEXT(Pattern::weather == ledStripDriver->getPattern(), "Wrong pattern!");
+  STRCMP_EQUAL_TEXT(COLOUR_TEMP_1.toString(),
+                    ledStripDriver->getColourOn()->toString(),
+                    "Temp 1 colour incorrect");
+  STRCMP_EQUAL_TEXT(COLOUR_TEMP_2.toString(),
+                    ledStripDriver->getColourOff()->toString(),
+                    "Temp 2 colour incorrect");
+  LONGS_EQUAL_TEXT(TEMP_FADE_SECS,
+                   ledStripDriver->getWeatherTempFadeIntervalSecs(),
+                   "Temp fade interval incorrect!");
+
+  BYTES_EQUAL_TEXT(RAIN_BAND_DEPTH,
+                   ledStripDriver->getWeatherRainBandHeightLeds(),
+                   "Rain band depth incorrect!");
+  LONGS_EQUAL_TEXT(RAIN_BAND_SPEED,
+                   ledStripDriver->getWeatherRainBandIncDelayMs(),
+                   "Rain band speed incorrect!");
+  BYTES_EQUAL_TEXT(RAIN_BAND_SPACING,
+                   ledStripDriver->getWeatherRainBandSpacingLeds(),
+                   "Rain band spacing incorrect!");
+  STRCMP_EQUAL_TEXT(COLOUR_RAIN.toString(),
+                    ledStripDriver->getWeatherRainBandColour()->toString(),
+                    "Rain colour incorrect");
+  CHECK_EQUAL_TEXT(Direction::reverse,
+                   ledStripDriver->getWeatherRainDirection(),
+                   "Rain direction incorrect!");
+
+  LONGS_EQUAL_TEXT(WARN_FADE_IN,
+                   ledStripDriver->getWeatherWarningFadeIn(),
+                   "Warning fade in incorrect");
+  LONGS_EQUAL_TEXT(WARN_FADE_OUT,
+                   ledStripDriver->getWeatherWarningFadeOut(),
+                   "Warning fade out incorrect");
+  LONGS_EQUAL_TEXT(WARN_OFF_DWELL,
+                   ledStripDriver->getWeatherWarningOffDwell(),
+                   "Warning off dwell incorrect");
+  STRCMP_EQUAL_TEXT(COLOUR_WARNING.toString(),
+                    ledStripDriver->getWeatherWarningColour()->toString(),
+                    "Warning colour incorrect");
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, weatherReturnsErrorForInvalidInput)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_INVALID_ARG,
+              cloudFunctions->weather("0,#FFFFFF,10,100,100,100,1,1,1"));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, weatherReturnsSuccessForValidInput)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_SUC,
+              cloudFunctions->weather("#000000,#111111,4,2,500,3,500,2000,8000"));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, weatherDoesntChangePatternOnParseError)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  cloudFunctions->weather("#000000,#111111,10,100,100,");
+  CHECK_TEXT(ledStripDriver->getPattern() != Pattern::weather, "Pattern changed to weather!");
+
+  delete cloudFunctions;
+}
+
 // TODO reset state before each new pattern
