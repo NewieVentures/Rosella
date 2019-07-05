@@ -14,6 +14,7 @@
 #define ARG_COUNT_PULSE 3
 #define ARG_COUNT_SNAKE 5
 #define ARG_COUNT_WEATHER 9
+#define ARG_COUNT_WIND 7
 
 const argParser::ArgInfo ARG_INFO_PERIOD_MS = {
   .type = ARG_TYPE_NUMBER,
@@ -117,6 +118,12 @@ const argParser::ArgInfo ARG_INFO_WEATHER_WARNING_OFF_DWELL = {
   .max = 9999
 };
 
+const argParser::ArgInfo ARG_INFO_WIND_FADE_INTERVAL = {
+  .type = ARG_TYPE_NUMBER,
+  .min = 0,
+  .max = 999
+};
+
 const argParser::ArgInfo ARG_INFO_COLOUR = {
   .type = ARG_TYPE_COLOUR
 };
@@ -170,6 +177,17 @@ const argParser::ArgInfo ARGS_INFO_WEATHER[] = {
   ARG_INFO_WEATHER_WARNING_OFF_DWELL
 };
 
+const argParser::ArgInfo ARGS_INFO_WIND[] = {
+  ARG_INFO_COLOUR,
+  ARG_INFO_COLOUR,
+  ARG_INFO_COLOUR,
+  ARG_INFO_WIND_FADE_INTERVAL,
+  ARG_INFO_WEATHER_WARNING_FADE_IN,
+  ARG_INFO_WEATHER_WARNING_FADE_OUT,
+  ARG_INFO_WEATHER_WARNING_OFF_DWELL
+};
+
+
 const argParser::ArgInfo ARGS_INFO_GRADIENT[] = {
   ARG_INFO_COLOUR,
   ARG_INFO_COLOUR
@@ -219,6 +237,11 @@ const argParser::ArgConfig ARG_CONFIG_WEATHER = {
   .length = ARG_COUNT_WEATHER,
 };
 
+const argParser::ArgConfig ARG_CONFIG_WIND = {
+  .info = ARGS_INFO_WIND,
+  .length = ARG_COUNT_WIND,
+};
+
 static Direction intToDirection(uint8_t value) {
   return value == 0 ? Direction::forward : Direction::reverse;
 }
@@ -229,6 +252,7 @@ CloudFunctions::CloudFunctions(LedStripDriver *ledDriver, int (*regFn)(String, i
   mColourOff = new COLOUR_BLACK;
   mWeatherRainColour = new COLOUR_WHITE;
   mWeatherWarningColour = new COLOUR_WHITE;
+  mWindDirectionColour = new COLOUR_BLACK;
 
   regFn(String("blink"), (&CloudFunctions::blink), this);
   regFn(String("colour"), (&CloudFunctions::colour), this);
@@ -239,10 +263,22 @@ CloudFunctions::CloudFunctions(LedStripDriver *ledDriver, int (*regFn)(String, i
   regFn(String("pulse"), (&CloudFunctions::pulse), this);
   regFn(String("snake"), (&CloudFunctions::snake), this);
   regFn(String("weather"), (&CloudFunctions::weather), this);
+  regFn(String("wind"), (&CloudFunctions::wind), this);
 }
 
 CloudFunctions::~CloudFunctions() {
   deleteColours();
+
+  // These colours are fixed at the moment, so only delete here
+  if (mWeatherWarningColour != nullptr) {
+    delete mWeatherWarningColour;
+    mWeatherWarningColour = nullptr;
+  }
+
+  if (mWeatherRainColour != nullptr) {
+    delete mWeatherRainColour;
+    mWeatherRainColour = nullptr;
+  }
 }
 
 void CloudFunctions::deleteColours() {
@@ -256,14 +292,9 @@ void CloudFunctions::deleteColours() {
     mColourOff = nullptr;
   }
 
-  if (mWeatherRainColour != nullptr) {
-    delete mWeatherRainColour;
-    mWeatherRainColour = nullptr;
-  }
-
-  if (mWeatherWarningColour != nullptr) {
-    delete mWeatherWarningColour;
-    mWeatherWarningColour = nullptr;
+  if (mWindDirectionColour != nullptr) {
+    delete mWindDirectionColour;
+    mWindDirectionColour = nullptr;
   }
 }
 
@@ -477,6 +508,40 @@ int CloudFunctions::weather(String args) {
       ->rainBandSpacing(bandSpacing)
       ->rainBandColour(mWeatherRainColour)
       ->rainDirection(Direction::reverse)
+      ->warningColour(mWeatherWarningColour)
+      ->warningFadeIn(warningFadeInMs)
+      ->warningFadeOut(warningFadeOutMs)
+      ->warningOffDwell(warningOffDwellMs);
+  }
+
+  return result;
+}
+
+int CloudFunctions::wind(String args) {
+  String parsedArgs[ARG_COUNT_WIND];
+  int32_t result = parseAndValidateArgs(parsedArgs, &ARG_CONFIG_WIND, args);
+  uint32_t fadeIntervalSecs;
+  uint32_t warningFadeInMs;
+  uint32_t warningFadeOutMs;
+  uint32_t warningOffDwellMs;
+
+  if (result == 0) {
+    deleteColours();
+
+    mWindDirectionColour = new Colour(parsedArgs[0]);
+    mColourOn = new Colour(parsedArgs[1]);  // wind speed colour 1
+    mColourOff = new Colour(parsedArgs[2]); // wind speed colour 2
+
+    strToInt(&fadeIntervalSecs, parsedArgs[3]);
+    strToInt(&warningFadeInMs, parsedArgs[4]);
+    strToInt(&warningFadeOutMs, parsedArgs[5]);
+    strToInt(&warningOffDwellMs, parsedArgs[6]);
+
+    mLedDriver->pattern(Pattern::wind)
+      ->windDirectionColour(mWindDirectionColour)
+      ->colourOn(mColourOn)
+      ->colourOff(mColourOff)
+      ->period(fadeIntervalSecs * 1000)
       ->warningColour(mWeatherWarningColour)
       ->warningFadeIn(warningFadeInMs)
       ->warningFadeOut(warningFadeOutMs)

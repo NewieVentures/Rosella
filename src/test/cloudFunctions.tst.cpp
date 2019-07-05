@@ -89,6 +89,11 @@ TEST(CloudFunctionsTestGroup, registersFunctions)
     .withParameter("fn", (void*)&CloudFunctions::weather)
     .withParameter("cls", cloudFunctions);
 
+  mock().expectOneCall("registerFunction")
+    .withParameter("name", "wind")
+    .withParameter("fn", (void*)&CloudFunctions::wind)
+    .withParameter("cls", cloudFunctions);
+
   cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
   delete cloudFunctions;
 }
@@ -395,6 +400,71 @@ TEST(CloudFunctionsTestGroup, defaultLoopPassesCorrectArgsToLedDriver)
 
   CHECK(Pattern::defaultLoop == ledStripDriver->getPattern());
   LONGS_EQUAL(2000, ledStripDriver->getPeriod());
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, windPassesCorrectArgsToLedDriver)
+{
+  uint32_t FADE_INTERVAL = 10;
+  uint32_t WARN_FADE_IN = 2000;
+  uint32_t WARN_FADE_OUT = 3000;
+  uint32_t WARN_OFF_DWELL = 4000;
+  Colour COLOUR_DIR = Colour("#34239A");
+  Colour COLOUR_SPD_1 = Colour("#8B2A75");
+  Colour COLOUR_SPD_2 = Colour("#501243");
+  char args[ARGS_LEN_MAX];
+
+  sprintf(args, "%s,%s,%s,%d,%d,%d,%d",
+          COLOUR_DIR.toString().c_str(),
+          COLOUR_SPD_1.toString().c_str(),
+          COLOUR_SPD_2.toString().c_str(),
+          FADE_INTERVAL,
+          WARN_FADE_IN,
+          WARN_FADE_OUT,
+          WARN_OFF_DWELL);
+
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+  cloudFunctions->wind(args);
+
+  CHECK(Pattern::wind == ledStripDriver->getPattern());
+  STRCMP_EQUAL(COLOUR_DIR.toString(), ledStripDriver->getWindDirectionColour()->toString());
+  STRCMP_EQUAL(COLOUR_SPD_1.toString(), ledStripDriver->getColourOn()->toString());
+  STRCMP_EQUAL(COLOUR_SPD_2.toString(), ledStripDriver->getColourOff()->toString());
+  LONGS_EQUAL(FADE_INTERVAL * 1000, ledStripDriver->getPeriod());
+  LONGS_EQUAL(WARN_FADE_IN, ledStripDriver->getWeatherWarningFadeIn());
+  LONGS_EQUAL(WARN_FADE_OUT, ledStripDriver->getWeatherWarningFadeOut());
+  LONGS_EQUAL(WARN_OFF_DWELL, ledStripDriver->getWeatherWarningOffDwell());
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, windReturnsErrorForInvalidInput)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_INVALID_ARG,
+              cloudFunctions->wind("0,#FFFFFF,#000000,10,100,100,100"));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, windReturnsSuccessForValidInput)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_SUC,
+              cloudFunctions->wind("#000000,#111111,#222222,10,100,100,100"));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, windDoesntChangePatternOnParseError)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver, &registerFunction);
+
+  cloudFunctions->wind("#000000,#111111,#222222,10,100,100,");
+  CHECK_TEXT(ledStripDriver->getPattern() != Pattern::wind, "Pattern changed to wind!");
 
   delete cloudFunctions;
 }

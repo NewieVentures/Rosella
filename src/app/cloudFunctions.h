@@ -12,6 +12,7 @@ class CloudFunctions {
   Colour *mColourOff;
   Colour *mWeatherRainColour;
   Colour *mWeatherWarningColour;
+  Colour *mWindDirectionColour;
 
   void deleteColours();
 
@@ -28,6 +29,7 @@ class CloudFunctions {
   int pulse(String args);
   int snake(String args);
   int weather(String args);
+  int wind(String args);
 };
 
 

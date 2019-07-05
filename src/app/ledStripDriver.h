@@ -230,6 +230,12 @@ public:
   Direction getSnakeDirection() { return mSnakeDirection; };
   WindPattern getCurrentWindPattern() { return mCurrentWindPattern; };
   uint32_t getPatternTimeout() { return mPatternTimeoutMs; };
+
+  uint32_t getWeatherWarningFadeIn() { return mWeatherWarningFadeInMs; };
+  uint32_t getWeatherWarningFadeOut() { return mWeatherWarningFadeOutMs; };
+  uint32_t getWeatherWarningOffDwell() { return mWeatherWarningOffDwellMs; }
+
+  Colour* getWindDirectionColour() { return mWindDirectionColour; };
 };
 
 #endif
