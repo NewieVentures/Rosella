@@ -22,6 +22,11 @@ static void calcLinearGradients(int32_t *offsets, double *gradients, Colour *end
 static uint8_t calcGradientColourValue(double gradient, double offset, uint32_t step);
 static Colour* getDefaultLoopStartColour(Colour** colours, uint32_t currentIndex);
 static Colour* getDefaultLoopEndColour(Colour** colours, uint32_t currentIndex);
+static void calculateFadedColour(Colour *output,
+                                 Colour *startCol,
+                                 Colour *endCol,
+                                 uint32_t step,
+                                 uint32_t totalSteps);
 
 void calcLinearOffsets(int32_t *offsets, Colour *startCol) {
   offsets[INDEX_RED] = startCol->getRed();
@@ -479,12 +484,9 @@ Colour* getDefaultLoopEndColour(Colour** colours, uint32_t currentIndex) {
 }
 
 void LedStripDriver::handleDefaultLoopPattern(led_strip_state_t *state, uint8_t *values) {
-  const uint32_t num_leds = mConfig->numLeds;
   const uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
   uint32_t currentStep;
-  int32_t offsets[COLOURS_PER_LED];
-  double gradients[COLOURS_PER_LED];
-  uint8_t valueRed, valueGreen, valueBlue;
+  Colour outputColour;
   Colour *startCol, *endCol;
 
   if (state->counter >= mPeriodMs) {
@@ -502,24 +504,13 @@ void LedStripDriver::handleDefaultLoopPattern(led_strip_state_t *state, uint8_t 
 
   currentStep = state->counter / mConfig->resolutionMs;
 
-  calcLinearOffsets(offsets, startCol);
-  calcLinearGradients(offsets, gradients, endCol, (double)steps);
+  calculateFadedColour(&outputColour,
+                       startCol,
+                       endCol,
+                       currentStep,
+                       steps);
 
-  valueRed = calcGradientColourValue(gradients[INDEX_RED],
-                                     offsets[INDEX_RED],
-                                     currentStep);
-  valueGreen = calcGradientColourValue(gradients[INDEX_GREEN],
-                                       offsets[INDEX_GREEN],
-                                       currentStep);
-  valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
-                                      offsets[INDEX_BLUE],
-                                      currentStep);
-
-  for (uint32_t i=0; i < num_leds; i++) {
-    values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
-    values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
-    values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
-  }
+  writeColourValues(values, mConfig->numLeds, &outputColour);
 }
 
 void calculateFadedColour(Colour *output,
@@ -669,11 +660,10 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
 
   updateWeatherWarningCounter(state);
 
+  // draw weather warning on top of other layers if enabled
   if (mWeatherWarningFadeInMs > 0) {
     writeWeatherWarningValues(state, values);
   }
-
-  //TODO if weather warning in off_dwell, write normal output, else write warning output
 }
 
 void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
