@@ -11,7 +11,7 @@ static LedStripDriver *statusLedDriver;
 static led_strip_state_t statusLedState;
 
 //ensure the first value is the correct LED state
-#ifdef COLOUR_ORDER_GGRRBB
+#ifdef COLOUR_ORDER_GRB
 static const Colour STATUS_COLOUR_ON(0, 1, 0);
 #else
 static const Colour STATUS_COLOUR_ON(1, 0, 0);
