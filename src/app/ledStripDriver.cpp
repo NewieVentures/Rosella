@@ -313,16 +313,55 @@ void LedStripDriver::handleSnakePattern(led_strip_state_t *state, uint8_t *value
   }
 }
 
-void LedStripDriver::handleWeatherPattern(led_strip_state_t *state, uint8_t *values) {
+void LedStripDriver::updateWeatherRainState(led_strip_state_t *state) {
+  state->weatherRainCounter += mConfig->resolutionMs;
+
+  if (state->weatherRainCounter >= mWeatherRainBandIncDelayMs) {
+    state->weatherRainCounter = 0;
+    state->weatherRainPosition += 1;
+
+    if (state->weatherRainPosition >= mConfig->numLeds) {
+      state->weatherRainPosition = 0;
+    }
+  }
+}
+
+void LedStripDriver::writeWeatherRainValues(led_strip_state_t *state, uint8_t *values) {
   const uint32_t num_leds = mConfig->numLeds;
+  //get initial position with bands wrapping around
+  uint32_t bandAndSpacingHeight = mWeatherRainBandHeightLeds + mWeatherRainBandSpacingLeds;
+  uint32_t rainInitialPosition = state->weatherRainPosition % bandAndSpacingHeight;
+
+  if (mWeatherRainDirection == Direction::forward) {
+    for (uint32_t i = rainInitialPosition; i < num_leds; i += bandAndSpacingHeight) {
+      for (uint32_t j = 0; j < mWeatherRainBandHeightLeds; j++) {
+        if ((i+j) < num_leds) { //all bands may not fit on the LED strip, stop before overflow
+          values[(i+j) * COLOURS_PER_LED + INDEX_RED] = mWeatherRainBandColour->getRed();
+          values[(i+j) * COLOURS_PER_LED + INDEX_GREEN] = mWeatherRainBandColour->getGreen();
+          values[(i+j) * COLOURS_PER_LED + INDEX_BLUE] = mWeatherRainBandColour->getBlue();
+        }
+      }
+    }
+  } else {
+    for (int32_t i = (num_leds - 1 - rainInitialPosition); i >= 0; i -= bandAndSpacingHeight) {
+      for (uint32_t j = 0; j < mWeatherRainBandHeightLeds; j++) {
+        //all bands may not fit on the LED strip, stop before overflow
+        if ((i+j) < num_leds && (i+j) >= 0) {
+          values[(i+j) * COLOURS_PER_LED + INDEX_RED] = mWeatherRainBandColour->getRed();
+          values[(i+j) * COLOURS_PER_LED + INDEX_GREEN] = mWeatherRainBandColour->getGreen();
+          values[(i+j) * COLOURS_PER_LED + INDEX_BLUE] = mWeatherRainBandColour->getBlue();
+        }
+      }
+    }
+  }
+}
+
+void LedStripDriver::handleWeatherTempLayer(led_strip_state_t *state,
+                                            uint8_t *values,
+                                            Colour *outputColour) {
   uint32_t steps = ((mWeatherTempFadeIntervalSecs * 1000) / mConfig->resolutionMs) - 1;
   uint32_t currentStep = state->counter / mConfig->resolutionMs;
-
-  uint8_t redVal, greenVal, blueVal;
   Colour *colourStart, *colourEnd;
-
-  int32_t offsets[COLOURS_PER_LED];
-  double gradients[COLOURS_PER_LED];
 
   if (currentStep >= steps) {
     state->counter = 0;
@@ -339,135 +378,37 @@ void LedStripDriver::handleWeatherPattern(led_strip_state_t *state, uint8_t *val
     colourEnd = mColourOn;
   }
 
-  calcLinearOffsets(offsets, colourStart);
-  calcLinearGradients(offsets, gradients, colourEnd, (double)steps);
-
   if (currentStep >= (steps - 1)) {
-    //ensure no rounding errors for end value
-    redVal = colourEnd->getRed();
-    greenVal = colourEnd->getGreen();
-    blueVal = colourEnd->getBlue();
+    outputColour->copy(colourEnd);
   } else {
-    redVal = calcGradientColourValue(gradients[INDEX_RED], offsets[INDEX_RED], currentStep);
-    greenVal = calcGradientColourValue(gradients[INDEX_GREEN], offsets[INDEX_GREEN], currentStep);
-    blueVal = calcGradientColourValue(gradients[INDEX_BLUE], offsets[INDEX_BLUE], currentStep);
+    calculateFadedColour(outputColour,
+                         colourStart,
+                         colourEnd,
+                         currentStep,
+                         steps);
   }
+}
 
-  for (uint32_t i=0; i < num_leds; i++) {
-    values[i * COLOURS_PER_LED + INDEX_RED] = redVal;
-    values[i * COLOURS_PER_LED + INDEX_GREEN] = greenVal;
-    values[i * COLOURS_PER_LED + INDEX_BLUE] = blueVal;
-  }
+void LedStripDriver::handleWeatherPattern(led_strip_state_t *state, uint8_t *values) {
+  const uint32_t num_leds = mConfig->numLeds;
+  Colour outputColour;
+
+  // temperature layer
+  handleWeatherTempLayer(state, values, &outputColour);
+  writeColourValues(values, num_leds, &outputColour);
 
   // add rain bands
-  state->weatherRainCounter += mConfig->resolutionMs;
-  if (state->weatherRainCounter >= mWeatherRainBandIncDelayMs) {
-    state->weatherRainCounter = 0;
-    state->weatherRainPosition += 1;
-
-    if (state->weatherRainPosition >= mConfig->numLeds) {
-      state->weatherRainPosition = 0;
-    }
-  }
+  updateWeatherRainState(state);
 
   if (mWeatherRainBandHeightLeds > 0) {
-    //get initial position with bands wrapping around
-    uint32_t bandAndSpacingHeight = mWeatherRainBandHeightLeds + mWeatherRainBandSpacingLeds;
-    uint32_t rainInitialPosition = state->weatherRainPosition % bandAndSpacingHeight;
-
-    if (mWeatherRainDirection == Direction::forward) {
-      for (uint32_t i = rainInitialPosition; i < num_leds; i += bandAndSpacingHeight) {
-        for (uint32_t j = 0; j < mWeatherRainBandHeightLeds; j++) {
-          if ((i+j) < num_leds) { //all bands may not fit on the LED strip, stop before overflow
-            values[(i+j) * COLOURS_PER_LED + INDEX_RED] = mWeatherRainBandColour->getRed();
-            values[(i+j) * COLOURS_PER_LED + INDEX_GREEN] = mWeatherRainBandColour->getGreen();
-            values[(i+j) * COLOURS_PER_LED + INDEX_BLUE] = mWeatherRainBandColour->getBlue();
-          }
-        }
-      }
-    } else {
-      for (int32_t i = (num_leds - 1 - rainInitialPosition); i >= 0; i -= bandAndSpacingHeight) {
-        for (uint32_t j = 0; j < mWeatherRainBandHeightLeds; j++) {
-          //all bands may not fit on the LED strip, stop before overflow
-          if ((i+j) < num_leds && (i+j) >= 0) {
-            values[(i+j) * COLOURS_PER_LED + INDEX_RED] = mWeatherRainBandColour->getRed();
-            values[(i+j) * COLOURS_PER_LED + INDEX_GREEN] = mWeatherRainBandColour->getGreen();
-            values[(i+j) * COLOURS_PER_LED + INDEX_BLUE] = mWeatherRainBandColour->getBlue();
-          }
-        }
-      }
-    }
+    writeWeatherRainValues(state, values);
   }
 
-  state->weatherWarningCounter += mConfig->resolutionMs;
+  updateWeatherWarningCounter(state);
 
-  switch(state->weatherWarningFadeState) {
-    case fadeIn:
-      if (state->weatherWarningCounter >= mWeatherWarningFadeInMs) {
-        state->weatherWarningCounter = 0;
-        state->weatherWarningFadeState = fadeOut;
-      }
-      break;
-
-    case fadeOut:
-      if (state->weatherWarningCounter >= mWeatherWarningFadeOutMs) {
-        state->weatherWarningCounter = 0;
-        state->weatherWarningFadeState = offDwell;
-      }
-      break;
-
-    case offDwell:
-      if (state->weatherWarningCounter >= mWeatherWarningOffDwellMs) {
-        state->weatherWarningCounter = 0;
-        state->weatherWarningFadeState = fadeIn;
-      }
-      break;
-  }
-
-  // weather warning
+  // draw weather warning on top of other layers if enabled
   if (mWeatherWarningFadeInMs > 0) {
-    Colour warningColourStart = COLOUR_BLACK;
-
-    if (state->weatherWarningFadeState == fadeIn) {
-      steps = mWeatherWarningFadeInMs / mConfig->resolutionMs;
-      currentStep = state->weatherWarningCounter / mConfig->resolutionMs;
-
-      calcLinearOffsets(offsets, &warningColourStart);
-      calcLinearGradients(offsets, gradients, mWeatherWarningColour, (double)steps);
-
-      redVal = calcGradientColourValue(gradients[INDEX_RED], offsets[INDEX_RED], currentStep);
-      greenVal = calcGradientColourValue(gradients[INDEX_GREEN], offsets[INDEX_GREEN], currentStep);
-      blueVal = calcGradientColourValue(gradients[INDEX_BLUE], offsets[INDEX_BLUE], currentStep);
-    } else if (state->weatherWarningFadeState == fadeOut) {
-      steps = mWeatherWarningFadeOutMs / mConfig->resolutionMs;
-      currentStep = state->weatherWarningCounter / mConfig->resolutionMs;
-
-      calcLinearOffsets(offsets, mWeatherWarningColour);
-      calcLinearGradients(offsets, gradients, &warningColourStart, (double)steps);
-
-      redVal = calcGradientColourValue(gradients[INDEX_RED], offsets[INDEX_RED], currentStep);
-      greenVal = calcGradientColourValue(gradients[INDEX_GREEN], offsets[INDEX_GREEN], currentStep);
-      blueVal = calcGradientColourValue(gradients[INDEX_BLUE], offsets[INDEX_BLUE], currentStep);
-    } else {
-      redVal = warningColourStart.getRed();
-      greenVal = warningColourStart.getGreen();
-      blueVal = warningColourStart.getBlue();
-    }
-
-    if (currentStep == (steps - 1)) {
-      redVal = mWeatherWarningColour->getRed();
-      greenVal = mWeatherWarningColour->getGreen();
-      blueVal = mWeatherWarningColour->getBlue();
-    }
-
-    //black is transparent for the warning layer
-    if ((redVal | greenVal | blueVal) > 0) {
-      for (uint32_t i=0; i < num_leds; i++) {
-        values[i * COLOURS_PER_LED + INDEX_RED] = redVal;
-        values[i * COLOURS_PER_LED + INDEX_GREEN] = greenVal;
-        values[i * COLOURS_PER_LED + INDEX_BLUE] = blueVal;
-      }
-    }
+    writeWeatherWarningValues(state, values);
   }
 }
 

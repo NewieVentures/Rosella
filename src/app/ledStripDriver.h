@@ -80,9 +80,13 @@ private:
   void handleDefaultLoopPattern(led_strip_state_t *state, uint8_t *values);
   void handleWindPattern(led_strip_state_t *state, uint8_t *values);
 
+  void handleWeatherTempLayer(led_strip_state_t *state, uint8_t *values, Colour *outputColour);
+  void updateWeatherRainState(led_strip_state_t *state);
+  void writeWeatherRainValues(led_strip_state_t *state, uint8_t *values);
   void writeWeatherWarningValues(led_strip_state_t *state, uint8_t *values);
   void updateWeatherWarningCounter(led_strip_state_t *state);
   void updateWindCounters(led_strip_state_t *state);
+
 
 protected:
   uint32_t mPeriodMs;
