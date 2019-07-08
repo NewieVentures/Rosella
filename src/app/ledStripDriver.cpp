@@ -110,6 +110,10 @@ void writeColourValues(uint8_t *values, uint32_t numLeds, Colour *colour) {
     values[i * COLOURS_PER_LED + INDEX_RED] = colour->getRed();
     values[i * COLOURS_PER_LED + INDEX_GREEN] = colour->getGreen();
     values[i * COLOURS_PER_LED + INDEX_BLUE] = colour->getBlue();
+
+    #ifdef INDEX_WHITE
+      values[i * COLOURS_PER_LED + INDEX_WHITE] = colour->calcWhiteValue();
+    #endif
   }
 }
 
@@ -238,6 +242,7 @@ void LedStripDriver::handleGradientPattern(led_strip_state_t *state, uint8_t *va
   const uint32_t steps = mConfig->numLeds - 1;
   int32_t offsets[COLOURS_PER_LED];
   double gradients[COLOURS_PER_LED];
+  Colour outputColour;
 
   calcLinearOffsets(offsets, mColourOn);
   calcLinearGradients(offsets, gradients, mColourOff, (double)steps);
@@ -247,16 +252,24 @@ void LedStripDriver::handleGradientPattern(led_strip_state_t *state, uint8_t *va
   values[steps * COLOURS_PER_LED + INDEX_GREEN] = mColourOff->getGreen();
   values[steps * COLOURS_PER_LED + INDEX_BLUE] = mColourOff->getBlue();
 
+  #ifdef INDEX_WHITE
+    values[steps * COLOURS_PER_LED + INDEX_WHITE] = mColourOff->calcWhiteValue();
+  #endif
+
   for (uint32_t i=0; i < steps; i++) {
-    values[i * COLOURS_PER_LED + INDEX_RED] = calcGradientColourValue(gradients[INDEX_RED],
-                                                                      offsets[INDEX_RED],
-                                                                      i);
-    values[i * COLOURS_PER_LED + INDEX_GREEN] = calcGradientColourValue(gradients[INDEX_GREEN],
-                                                                        offsets[INDEX_GREEN],
-                                                                        i);
-    values[i * COLOURS_PER_LED + INDEX_BLUE] = calcGradientColourValue(gradients[INDEX_BLUE],
-                                                                       offsets[INDEX_BLUE],
-                                                                       i);
+    outputColour.update(
+      calcGradientColourValue(gradients[INDEX_RED], offsets[INDEX_RED], i),
+      calcGradientColourValue(gradients[INDEX_GREEN], offsets[INDEX_GREEN], i),
+      calcGradientColourValue(gradients[INDEX_BLUE], offsets[INDEX_BLUE], i)
+    );
+
+    values[i * COLOURS_PER_LED + INDEX_RED] = outputColour.getRed();
+    values[i * COLOURS_PER_LED + INDEX_GREEN] = outputColour.getGreen();
+    values[i * COLOURS_PER_LED + INDEX_BLUE] = outputColour.getBlue();
+
+    #ifdef INDEX_WHITE
+      values[i * COLOURS_PER_LED + INDEX_WHITE] = outputColour.calcWhiteValue();
+    #endif
   }
 }
 
@@ -282,6 +295,10 @@ void LedStripDriver::handleSnakePattern(led_strip_state_t *state, uint8_t *value
     values[(i * COLOURS_PER_LED) + INDEX_RED] = colour->getRed();
     values[(i * COLOURS_PER_LED) + INDEX_GREEN] = colour->getGreen();
     values[(i * COLOURS_PER_LED) + INDEX_BLUE] = colour->getBlue();
+
+    #ifdef INDEX_WHITE
+      values[i * COLOURS_PER_LED + INDEX_WHITE] = colour->calcWhiteValue();
+    #endif
   }
 
   if (state->counter >= INCREMENT_MS) {
@@ -320,6 +337,10 @@ void LedStripDriver::writeWeatherRainValues(led_strip_state_t *state, uint8_t *v
           values[(i+j) * COLOURS_PER_LED + INDEX_RED] = mWeatherRainBandColour->getRed();
           values[(i+j) * COLOURS_PER_LED + INDEX_GREEN] = mWeatherRainBandColour->getGreen();
           values[(i+j) * COLOURS_PER_LED + INDEX_BLUE] = mWeatherRainBandColour->getBlue();
+
+          #ifdef INDEX_WHITE
+            values[(i+j) * COLOURS_PER_LED + INDEX_WHITE] = mWeatherRainBandColour->calcWhiteValue();
+          #endif
         }
       }
     }
@@ -331,6 +352,10 @@ void LedStripDriver::writeWeatherRainValues(led_strip_state_t *state, uint8_t *v
           values[(i+j) * COLOURS_PER_LED + INDEX_RED] = mWeatherRainBandColour->getRed();
           values[(i+j) * COLOURS_PER_LED + INDEX_GREEN] = mWeatherRainBandColour->getGreen();
           values[(i+j) * COLOURS_PER_LED + INDEX_BLUE] = mWeatherRainBandColour->getBlue();
+
+          #ifdef INDEX_WHITE
+            values[(i+j) * COLOURS_PER_LED + INDEX_WHITE] = mWeatherRainBandColour->calcWhiteValue();
+          #endif
         }
       }
     }

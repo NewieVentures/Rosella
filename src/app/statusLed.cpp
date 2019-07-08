@@ -4,7 +4,7 @@
 #include "ledStripDriver.h"
 #include "statusLed.h"
 
-//need COLOURS_PER_LED values to use ledStripDriver, even only one is required
+//need COLOURS_PER_LED values to use ledStripDriver, even though only one is required
 static uint8_t statusLedValues[1 * COLOURS_PER_LED];
 
 static LedStripDriver *statusLedDriver;

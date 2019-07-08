@@ -20,6 +20,9 @@ class Colour {
   void update(uint8_t red, uint8_t green, uint8_t blue);
   void copy(Colour* source);
 
+  // Calculate the white value in an RGBW system based on the RGB values
+  uint8_t calcWhiteValue();
+
   bool isBlack();
   bool isValid();
 

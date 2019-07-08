@@ -48,7 +48,7 @@ static void verify_colours(Colour *expected,
                            uint32_t len,
                            uint32_t offset = 0) {
   for (uint32_t i=offset; i<len; i++) {
-    uint32_t index = i * 3;
+    uint32_t index = i * COLOURS_PER_LED;
     Colour actual = Colour(values[index+INDEX_RED],
                            values[index+INDEX_GREEN],
                            values[index+INDEX_BLUE]);
@@ -59,8 +59,7 @@ static void verify_colours(Colour *expected,
                              expected->toString().c_str(),
                              actual.toString().c_str());
 
-    CHECK_TEXT(*expected == actual,
-               message);
+    CHECK_TEXT(*expected == actual, message);
   }
 }
 
@@ -456,7 +455,7 @@ TEST(LedStripDriverProgressTestGroup, writesCorrectInitialValue)
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_ON, lastValuesWritten);
-  verify_colours((Colour*)&COLOUR_OFF, &lastValuesWritten[3], 2);
+  verify_colours((Colour*)&COLOUR_OFF, &lastValuesWritten[COLOURS_PER_LED], 2);
 }
 
 TEST(LedStripDriverProgressTestGroup, incrementsProgressValueAfterDelay)
@@ -1044,11 +1043,11 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForInitialRainCounter)
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, incrementsRainCounterCorrectly)
@@ -1107,11 +1106,11 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForIncrementedRainPositi
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, incrementsRainPositionCorrectly)
@@ -1228,11 +1227,11 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesWhenRainBandsWrapAround)
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForRainBandsReverseDirection)
@@ -1263,11 +1262,11 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForRainBandsReverseDirec
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForRainBandsIncrementedReverseDirection)
@@ -1298,11 +1297,11 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForRainBandsIncrementedR
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, usesCorrectColourForRainBands)
@@ -1361,12 +1360,12 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForIncreasedRainBandHeig
 
   driver->onTimerFired(&state, values);
 
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[0 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForIncreasedRainBandSpacing)
@@ -1398,11 +1397,11 @@ TEST(LedStripDriverWeatherTestGroup, writesCorrectValuesForIncreasedRainBandSpac
   driver->onTimerFired(&state, values);
 
   verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[0]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[6]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[9]);
-  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[12]);
-  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[15]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[1 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[2 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[3 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_RAIN, &lastValuesWritten[4 * COLOURS_PER_LED]);
+  verify_colour((Colour*)&COLOUR_START, &lastValuesWritten[5 * COLOURS_PER_LED]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, doesNotIncrementsRainPositionIfCounterLessThanIncDelay)
@@ -1762,7 +1761,9 @@ TEST(LedStripDriverWeatherTestGroup, doesNotDrawRainBandsPastEndOfLedStrip)
 
   driver->onTimerFired(&state, values);
 
-  verify_colour((Colour*)&COLOUR_INIT, &values[18]);//last must be unchanged from init
+  // last must be unchanged from init
+  const int INDEX_OVERFLOW = WEATHER_TEST_LED_CONFIG.numLeds * COLOURS_PER_LED;
+  verify_colour((Colour*)&COLOUR_INIT, &values[INDEX_OVERFLOW]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, doesNotDrawRainBandsPastEndOfLedStripReverseDirection)
@@ -1794,7 +1795,9 @@ TEST(LedStripDriverWeatherTestGroup, doesNotDrawRainBandsPastEndOfLedStripRevers
 
   driver->onTimerFired(&state, values);
 
-  verify_colour((Colour*)&COLOUR_INIT, &values[18]);//last must be unchanged from init
+  // last must be unchanged from init
+  const int INDEX_OVERFLOW = WEATHER_TEST_LED_CONFIG.numLeds * COLOURS_PER_LED;
+  verify_colour((Colour*)&COLOUR_INIT, &values[INDEX_OVERFLOW]);
 }
 
 TEST(LedStripDriverWeatherTestGroup, warningUsesProvidedColour)

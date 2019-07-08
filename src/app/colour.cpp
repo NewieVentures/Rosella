@@ -1,5 +1,6 @@
 #include "colour.h"
 #include "utils.h"
+#include <algorithm>
 
 #define STR_LEN 7
 
@@ -67,6 +68,18 @@ void Colour::copy(Colour* source) {
   mRed = source->getRed();
   mGreen = source->getGreen();
   mBlue = source->getBlue();
+}
+
+uint8_t Colour::calcWhiteValue() {
+  uint8_t max = std::max(mRed, mGreen);
+  max = std::max(max, mBlue);
+
+  uint8_t min = std::min(mRed, mGreen);
+  min = std::min(min, mBlue);
+
+  double sat = (max - min) / (double)max;
+
+  return (1 - sat) * max;
 }
 
 bool operator==(const Colour& lhs, const Colour& rhs) {
