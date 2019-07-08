@@ -253,7 +253,7 @@ CloudFunctions::CloudFunctions(LedStripDriver *ledDriver) {
   mWeatherRainColour = new COLOUR_WHITE;
   mWeatherWarningColour = new COLOUR_WHITE;
   mWindDirectionColour = new COLOUR_BLACK;
-  mPrevWindDirectionColour = nullptr;
+  mPrevWindDirectionColour = new COLOUR_BLACK;
 }
 
 CloudFunctions::~CloudFunctions() {
@@ -268,6 +268,11 @@ CloudFunctions::~CloudFunctions() {
   if (mWeatherRainColour != nullptr) {
     delete mWeatherRainColour;
     mWeatherRainColour = nullptr;
+  }
+
+  if (mWindDirectionColour != nullptr) {
+    delete mWindDirectionColour;
+    mWindDirectionColour = nullptr;
   }
 }
 
@@ -297,9 +302,10 @@ void CloudFunctions::deleteColours() {
     mColourOff = nullptr;
   }
 
-  if (mWindDirectionColour != nullptr) {
-    delete mWindDirectionColour;
-    mWindDirectionColour = nullptr;
+  // wind direction colour will become the new prevWindDirectionColour, so don't delete it!
+  if (mPrevWindDirectionColour != nullptr) {
+    delete mPrevWindDirectionColour;
+    mPrevWindDirectionColour = nullptr;
   }
 }
 
@@ -533,6 +539,7 @@ int CloudFunctions::wind(String args) {
   if (result == 0) {
     deleteColours();
 
+    mPrevWindDirectionColour = mWindDirectionColour;
     mWindDirectionColour = new Colour(parsedArgs[0]);
     mColourOn = new Colour(parsedArgs[1]);  // wind speed colour 1
     mColourOff = new Colour(parsedArgs[2]); // wind speed colour 2
@@ -543,6 +550,8 @@ int CloudFunctions::wind(String args) {
     strToInt(&warningOffDwellMs, parsedArgs[6]);
 
     mLedDriver->pattern(Pattern::wind)
+      ->resetState()
+      ->prevWindDirectionColour(mPrevWindDirectionColour)
       ->windDirectionColour(mWindDirectionColour)
       ->colourOn(mColourOn)
       ->colourOff(mColourOff)

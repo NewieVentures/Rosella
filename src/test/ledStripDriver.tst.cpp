@@ -2164,6 +2164,7 @@ TEST(LedStripDriverWindTestGroup, writesCorrectStartValues)
     .windSpeedTransition = false,
   };
 
+  driver->cancelWindDirectionTransition(); // not testing transition here
   driver->onTimerFired(&state, values);
 
   verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
@@ -2452,6 +2453,7 @@ TEST(LedStripDriverWindTestGroup, showsCorrectEndColoursForTransitionAfterTimeou
   // state.windSpeedTransition = true; // Transition already finished
   // state.counter = 2;
 
+  driver->cancelWindDirectionTransition(); // not testing transition here
   driver->onTimerFired(&state, values);
 
   //should fade from direction colour to first speed colour
@@ -2544,6 +2546,7 @@ TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningInitialSta
     .windSpeedTimeoutCounter = 0,
   };
 
+  driver->cancelWindDirectionTransition(); // not testing transition here
   driver->onTimerFired(&state, values);
 
   //'transparent' at first
@@ -2806,6 +2809,7 @@ TEST(LedStripDriverWindTestGroup, writesCorrectValuesForWeatherWarningOffDwellTi
     .windSpeedTimeoutCounter = 0,
   };
 
+  driver->cancelWindDirectionTransition(); // not testing transition here
   driver->onTimerFired(&state, values);
 
   verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
@@ -2994,6 +2998,7 @@ TEST(LedStripDriverWindTestGroup, shouldNotWriteWarningEndColourAtCounterIfInOff
     .windSpeedTimeoutCounter = 0,
   };
 
+  driver->cancelWindDirectionTransition(); // not testing transition here
   driver->onTimerFired(&state, values);
 
   verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);

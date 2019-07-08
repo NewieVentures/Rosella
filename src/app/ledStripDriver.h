@@ -61,6 +61,7 @@ typedef struct {
   bool windSpeedTransition;
   uint32_t timeoutCounter; // Pattern timeout
   uint32_t windSpeedTimeoutCounter;
+  uint32_t windDirectionFadeCounter;
 } led_strip_state_t;
 
 class LedStripDriver {
@@ -68,6 +69,7 @@ private:
   led_strip_config_t* mConfig;
   uint32_t mPatternTimeoutMs;
   bool mClearPatternTimeout;
+  bool mResetState; // flag to reset state on next loop
 
   void handleBlinkPattern(led_strip_state_t *state, uint8_t *values);
   void handlePulsePattern(led_strip_state_t *state, uint8_t *values);
@@ -86,7 +88,7 @@ private:
   void writeWeatherWarningValues(led_strip_state_t *state, uint8_t *values);
   void updateWeatherWarningCounter(led_strip_state_t *state);
   void updateWindCounters(led_strip_state_t *state);
-
+  void resetState(led_strip_state_t *state);
 
 protected:
   uint32_t mPeriodMs;
@@ -120,6 +122,8 @@ protected:
   Colour* mDefaultLoopColours[DL_NUM_COL];
 
   Colour* mWindDirectionColour;
+  Colour* mPrevWindDirectionColour; // used for fading to new value
+  bool mWindDirTransition; // true when fading to new direction value
   WindPattern mCurrentWindPattern;
   uint32_t mWindSpeedTimeoutMs;
 
@@ -207,6 +211,9 @@ public:
   /* Used by wind pattern to set wind direction colour */
   LedStripDriver* windDirectionColour(Colour *colour);
 
+  /* Used by wind pattern to fade to new wind direction colour */
+  LedStripDriver* prevWindDirectionColour(Colour *colour);
+
   /* Used by wind pattern to set timeout for speed layer */
   LedStripDriver* windSpeedTimeout(uint32_t timeoutMs);
 
@@ -214,11 +221,21 @@ public:
   LedStripDriver* showWindSpeed(led_strip_state_t *state, uint32_t timeoutMs);
 
   /*
+   * Reset the state on next loop iteration. Used when pattern changes if state reset required.
+   */
+  LedStripDriver* resetState();
+
+  /*
   * Used by progress pattern to set direction of increment
   * eg forward = first LED to last
   *    reverse = last LED to first
   */
   LedStripDriver* progressDirection(Direction direction);
+
+  /*
+   * Stop the transition from one wind direction colour to the next. Useful for testing.
+   */
+  void cancelWindDirectionTransition();
 
   uint32_t getPeriod() { return mPeriodMs; };
   Colour* getColourOn() { return mColourOn; };
