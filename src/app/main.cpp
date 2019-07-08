@@ -25,7 +25,8 @@ void setup() {
   events::setup();
   timers::setup();
 
-  cloudFunctions = new CloudFunctions(ledStrip::getDriver(), &regFn);
+  cloudFunctions = new CloudFunctions(ledStrip::getDriver());
+  cloudFunctions->registerFunctions(&regFn);
 
   Particle.connect();
 }

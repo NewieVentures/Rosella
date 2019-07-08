@@ -6,19 +6,13 @@
 #include "ledStripDriver.h"
 
 class CloudFunctions {
-  private:
-  LedStripDriver *mLedDriver;
-  Colour *mColourOn;
-  Colour *mColourOff;
-  Colour *mWeatherRainColour;
-  Colour *mWeatherWarningColour;
-  Colour *mWindDirectionColour;
-
-  void deleteColours();
-
   public:
-  CloudFunctions(LedStripDriver *ledDriver, int (*regFn)(String, int (CloudFunctions::*cloudFn)(String), CloudFunctions*));
+  CloudFunctions(LedStripDriver *ledDriver);
   ~CloudFunctions();
+
+  void registerFunctions(int (*regFn)(String,
+                                      int (CloudFunctions::*cloudFn)(String),
+                                      CloudFunctions*));
 
   int blink(String args);
   int colour(String args);
@@ -30,6 +24,18 @@ class CloudFunctions {
   int snake(String args);
   int weather(String args);
   int wind(String args);
+
+  private:
+  LedStripDriver *mLedDriver;
+  Colour *mColourOn;
+  Colour *mColourOff;
+  Colour *mWeatherRainColour;
+  Colour *mWeatherWarningColour;
+  Colour *mWindDirectionColour;
+  Colour *mPrevWindDirectionColour;
+
+  void deleteColours();
+
 };
 
 

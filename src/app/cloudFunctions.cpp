@@ -246,24 +246,14 @@ static Direction intToDirection(uint8_t value) {
   return value == 0 ? Direction::forward : Direction::reverse;
 }
 
-CloudFunctions::CloudFunctions(LedStripDriver *ledDriver, int (*regFn)(String, int (CloudFunctions::*cloudFn)(String), CloudFunctions*)) {
+CloudFunctions::CloudFunctions(LedStripDriver *ledDriver) {
   mLedDriver = ledDriver;
   mColourOn = new COLOUR_BLACK;
   mColourOff = new COLOUR_BLACK;
   mWeatherRainColour = new COLOUR_WHITE;
   mWeatherWarningColour = new COLOUR_WHITE;
   mWindDirectionColour = new COLOUR_BLACK;
-
-  regFn(String("blink"), (&CloudFunctions::blink), this);
-  regFn(String("colour"), (&CloudFunctions::colour), this);
-  regFn(String("defaultLoop"), (&CloudFunctions::defaultLoop), this);
-  regFn(String("strobe"), (&CloudFunctions::strobe), this);
-  regFn(String("gradient"), (&CloudFunctions::gradient), this);
-  regFn(String("progress"), (&CloudFunctions::progress), this);
-  regFn(String("pulse"), (&CloudFunctions::pulse), this);
-  regFn(String("snake"), (&CloudFunctions::snake), this);
-  regFn(String("weather"), (&CloudFunctions::weather), this);
-  regFn(String("wind"), (&CloudFunctions::wind), this);
+  mPrevWindDirectionColour = nullptr;
 }
 
 CloudFunctions::~CloudFunctions() {
@@ -279,6 +269,21 @@ CloudFunctions::~CloudFunctions() {
     delete mWeatherRainColour;
     mWeatherRainColour = nullptr;
   }
+}
+
+void CloudFunctions::registerFunctions(int (*regFn)(String,
+                                                    int (CloudFunctions::*cloudFn)(String),
+                                                    CloudFunctions*)) {
+  regFn(String("blink"), (&CloudFunctions::blink), this);
+  regFn(String("colour"), (&CloudFunctions::colour), this);
+  regFn(String("defaultLoop"), (&CloudFunctions::defaultLoop), this);
+  regFn(String("strobe"), (&CloudFunctions::strobe), this);
+  regFn(String("gradient"), (&CloudFunctions::gradient), this);
+  regFn(String("progress"), (&CloudFunctions::progress), this);
+  regFn(String("pulse"), (&CloudFunctions::pulse), this);
+  regFn(String("snake"), (&CloudFunctions::snake), this);
+  regFn(String("weather"), (&CloudFunctions::weather), this);
+  regFn(String("wind"), (&CloudFunctions::wind), this);
 }
 
 void CloudFunctions::deleteColours() {
