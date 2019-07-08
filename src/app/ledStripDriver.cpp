@@ -129,9 +129,7 @@ void LedStripDriver::handlePulsePattern(led_strip_state_t *state, uint8_t *value
   const uint32_t num_leds = mConfig->numLeds;
   const uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
   uint32_t currentStep;
-  int32_t offsets[COLOURS_PER_LED];
-  double gradients[COLOURS_PER_LED];
-  uint8_t valueRed, valueGreen, valueBlue;
+  Colour outputColour;
   Colour *startCol, *endCol;
 
   if (state->counter >= mPeriodMs) {
@@ -149,30 +147,13 @@ void LedStripDriver::handlePulsePattern(led_strip_state_t *state, uint8_t *value
     endCol = mColourOn;
   }
 
-  calcLinearOffsets(offsets, startCol);
-  calcLinearGradients(offsets, gradients, endCol, (double)steps);
+  calculateFadedColour(&outputColour,
+                       startCol,
+                       endCol,
+                       currentStep,
+                       steps);
 
-  if (state->counter >= (mPeriodMs-mConfig->resolutionMs)) {
-    valueRed = endCol->getRed();
-    valueGreen = endCol->getGreen();
-    valueBlue = endCol->getBlue();
-  } else {
-    valueRed = calcGradientColourValue(gradients[INDEX_RED],
-                                       offsets[INDEX_RED],
-                                       currentStep);
-    valueGreen = calcGradientColourValue(gradients[INDEX_GREEN],
-                                         offsets[INDEX_GREEN],
-                                         currentStep);
-    valueBlue = calcGradientColourValue(gradients[INDEX_BLUE],
-                                        offsets[INDEX_BLUE],
-                                        currentStep);
-  }
-
-  for (uint32_t i=0; i < num_leds; i++) {
-    values[i * COLOURS_PER_LED + INDEX_RED] = valueRed;
-    values[i * COLOURS_PER_LED + INDEX_GREEN] = valueGreen;
-    values[i * COLOURS_PER_LED + INDEX_BLUE] = valueBlue;
-  }
+  writeColourValues(values, num_leds, &outputColour);
 }
 
 void LedStripDriver::handleBlinkPattern(led_strip_state_t *state, uint8_t *values) {
@@ -254,8 +235,7 @@ uint8_t calcGradientColourValue(double gradient, double offset, uint32_t step) {
 }
 
 void LedStripDriver::handleGradientPattern(led_strip_state_t *state, uint8_t *values) {
-  const uint32_t num_leds = mConfig->numLeds;
-  const uint32_t steps = num_leds - 1;
+  const uint32_t steps = mConfig->numLeds - 1;
   int32_t offsets[COLOURS_PER_LED];
   double gradients[COLOURS_PER_LED];
 
@@ -281,8 +261,9 @@ void LedStripDriver::handleGradientPattern(led_strip_state_t *state, uint8_t *va
 }
 
 void LedStripDriver::handleSnakePattern(led_strip_state_t *state, uint8_t *values) {
-  const uint32_t PROGRESS_MAX = mConfig->numLeds + mSnakeLength;
-  const uint32_t INCREMENT_MS = mPeriodMs / (mConfig->numLeds + mSnakeLength);
+  const uint32_t num_leds = mConfig->numLeds;
+  const uint32_t PROGRESS_MAX = num_leds + mSnakeLength;
+  const uint32_t INCREMENT_MS = mPeriodMs / (num_leds + mSnakeLength);
   uint32_t start;
   uint32_t end;
 
@@ -291,11 +272,11 @@ void LedStripDriver::handleSnakePattern(led_strip_state_t *state, uint8_t *value
     end = state->progress;
   } else {
     end = PROGRESS_MAX - state->progress;
-    start = state->progress < mConfig->numLeds ? (end - mSnakeLength): 0;
+    start = state->progress < num_leds ? (end - mSnakeLength): 0;
   }
 
 
-  for (uint8_t i=0; i < mConfig->numLeds; i++) {
+  for (uint8_t i=0; i < num_leds; i++) {
     Colour *colour = (i >= start && i < end) ? mColourOn : mColourOff;
 
     values[(i * COLOURS_PER_LED) + INDEX_RED] = colour->getRed();
