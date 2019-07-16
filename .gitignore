@@ -1,3 +1,9 @@
-*.bin
-*.o
-src/tests
+output
+tests
+src/**/*.bin
+src/**/*.o
+*.bck
+*.bak
+*.kicad_pcb-bak
+sch/**/fp-info-cache
+sch/**/*cache*
