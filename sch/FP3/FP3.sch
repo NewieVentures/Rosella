@@ -136,11 +136,11 @@ P 3350 4700
 F 0 "J1" H 3000 5250 50  0000 C CNN
 F 1 "module_connector_header" H 3400 4150 50  0000 C CNN
 F 2 "project_parts:Faraday_module_smt_hdr" H 3450 4000 50  0001 C CNN
-F 3 "https://cdn.amphenol-icc.com/media/wysiwyg/files/drawing/68000.pdf" H 3450 4000 50  0001 C CNN
-F 4 "CONN HEADER MALE 18POS .1\"" H 3100 5350 50  0001 C CNN "Description"
-F 5 "Amphenol FCI" H 3350 4700 50  0001 C CNN "Manufacturer"
-F 6 "68001-418HLF" H 3350 4700 50  0001 C CNN "Part Number"
-F 7 "609-5513-ND" H 3350 4700 50  0001 C CNN "Order Number"
+F 3 "http://suddendocs.samtec.com/catalog_english/tsm.pdf" H 3450 4000 50  0001 C CNN
+F 4 "CONN HEADER SMD 20POS 2.54MM" H 3100 5350 50  0001 C CNN "Description"
+F 5 "Samtec inc" H 3350 4700 50  0001 C CNN "Manufacturer"
+F 6 "TSM-120-01-L-SV" H 3350 4700 50  0001 C CNN "Part Number"
+F 7 "SAM15925-ND" H 3350 4700 50  0001 C CNN "Order Number"
 F 8 "Digikey" H 3350 4700 50  0001 C CNN "Supplier"
 	1    3350 4700
 	1    0    0    -1  
@@ -179,22 +179,6 @@ Wire Wire Line
 NoConn ~ 2850 4300
 NoConn ~ 3850 4900
 NoConn ~ 3850 5000
-$Comp
-L newie:MTXDOT-EU1-A00-100 U1
-U 1 1 5D2D60E1
-P 7500 4200
-F 0 "U1" H 6850 5200 50  0000 C CNN
-F 1 "MTXDOT-EU1-A00-100" H 7500 3250 50  0000 C CNN
-F 2 "newie:MTXDOT-AS1-A00-1" H 7500 4200 50  0001 L BNN
-F 3 "" H 7500 4200 50  0001 L BNN
-F 4 "https://www.digikey.com.au/product-detail/en/multi-tech-systems-inc/MTXDOT-EU1-A00-100/MTXDOT-EU1-A00-100-ND/6237015?utm_source=snapeda&utm_medium=aggregator&utm_campaign=symbol" H 7500 4200 50  0001 L BNN "Field4"
-F 5 "Module Multi-Tech Systems" H 7500 4200 50  0001 L BNN "Field5"
-F 6 "MTXDOT-EU1-A00-100" H 7500 4200 50  0001 L BNN "Field6"
-F 7 "xDot 868 MHZ LORA MODULE UFL/TRC" H 7500 4200 50  0001 L BNN "Field7"
-F 8 "Multi-Tech Systems" H 7500 4200 50  0001 L BNN "Field8"
-	1    7500 4200
-	1    0    0    -1  
-$EndComp
 Text Label 8500 3600 0    50   ~ 0
 UART_TX
 Text Label 8500 3700 0    50   ~ 0
@@ -240,7 +224,12 @@ P 3250 2550
 F 0 "J2" H 3250 2850 50  0000 C CNN
 F 1 "MXDOT_Prog_Header_Keyed" H 3600 2250 50  0000 C CNN
 F 2 "newie:Header_MDOT_PROG_2x05_Pitch1.27mm" H 3250 2550 50  0001 C CNN
-F 3 "" H 3250 2550 50  0001 C CNN
+F 3 "https://s3.amazonaws.com/catalogspreads-pdf/PAGE94-95%20.050%20MALE%20HDR%20ST%20RA%20SMT.pdf" H 3250 2550 50  0001 C CNN
+F 4 "CONN HEADER VERT 10POS 1.27MM" H 3250 2550 50  0001 C CNN "Description"
+F 5 "Sullins Connector Solutions" H 3250 2550 50  0001 C CNN "Manufacturer"
+F 6 "GRPB052VWVN-RC" H 3250 2550 50  0001 C CNN "Part Number"
+F 7 "S9015E-05-ND" H 3250 2550 50  0001 C CNN "Order Number"
+F 8 "Digikey" H 3250 2550 50  0001 C CNN "Supplier"
 	1    3250 2550
 	1    0    0    -1  
 $EndComp
@@ -375,17 +364,6 @@ Text Label 3650 2750 0    50   ~ 0
 NRESET
 Wire Wire Line
 	3550 2750 3950 2750
-NoConn ~ 6600 4000
-NoConn ~ 6600 4100
-NoConn ~ 6600 4200
-NoConn ~ 6600 4300
-NoConn ~ 6600 4500
-NoConn ~ 6600 4600
-NoConn ~ 6600 4900
-NoConn ~ 6600 5000
-NoConn ~ 8400 4300
-NoConn ~ 8400 4200
-NoConn ~ 6600 3500
 $Comp
 L Connector:TestPoint TP4
 U 1 1 5D36E851
@@ -456,4 +434,174 @@ Wire Notes Line
 	2100 2000 4600 2000
 Wire Notes Line
 	4600 2000 4600 3350
+$Comp
+L newie:MTXDOT-AU1-A01-100 U1
+U 1 1 5D3A88F0
+P 7500 4200
+F 0 "U1" H 6850 5150 50  0000 C CNN
+F 1 "MTXDOT-AU1-A01-100" H 7500 3250 50  0000 C CNN
+F 2 "newie:MTXDOT-AS1-A00-1" H 7500 4200 50  0001 L BNN
+F 3 "https://www.digikey.com.au/product-detail/en/multi-tech-systems-inc/MTXDOT-EU1-A00-100/MTXDOT-EU1-A00-100-ND/6237015?utm_source=snapeda&utm_medium=aggregator&utm_campaign=symbol" H 7500 4200 50  0001 L BNN
+F 4 "Digikey" H 7500 4200 50  0001 L BNN "Supplier"
+F 5 "591-1316-ND" H 7500 4200 50  0001 L BNN "Order Number"
+F 6 "MTXDOT-AU1-A01-100" H 7500 4200 50  0001 L BNN "Part Number"
+F 7 "xDot 915 MHZ LORA MODULE UFL/TRC" H 7500 4200 50  0001 L BNN "Description"
+F 8 "Multi-Tech Systems" H 7500 4200 50  0001 L BNN "Manufacturer"
+	1    7500 4200
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:TestPoint TP6
+U 1 1 5D3BAF13
+P 6450 4000
+F 0 "TP6" V 6450 4200 50  0000 L CNN
+F 1 "NSS" V 6450 4400 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4000 50  0001 C CNN
+F 3 "~" H 6650 4000 50  0001 C CNN
+	1    6450 4000
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP7
+U 1 1 5D3BAF19
+P 6450 4100
+F 0 "TP7" V 6450 4300 50  0000 L CNN
+F 1 "SCK" V 6450 4500 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4100 50  0001 C CNN
+F 3 "~" H 6650 4100 50  0001 C CNN
+	1    6450 4100
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP8
+U 1 1 5D3BAF1F
+P 6450 4200
+F 0 "TP8" V 6450 4400 50  0000 L CNN
+F 1 "MOSI" V 6450 4600 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4200 50  0001 C CNN
+F 3 "~" H 6650 4200 50  0001 C CNN
+	1    6450 4200
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP10
+U 1 1 5D3BAF25
+P 6450 4300
+F 0 "TP10" V 6450 4500 50  0000 L CNN
+F 1 "MISO" V 6450 4700 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4300 50  0001 C CNN
+F 3 "~" H 6650 4300 50  0001 C CNN
+	1    6450 4300
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP12
+U 1 1 5D3BC579
+P 6450 4500
+F 0 "TP12" V 6450 4700 50  0000 L CNN
+F 1 "SCL" V 6450 4900 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4500 50  0001 C CNN
+F 3 "~" H 6650 4500 50  0001 C CNN
+	1    6450 4500
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP13
+U 1 1 5D3BC57F
+P 6450 4600
+F 0 "TP13" V 6450 4800 50  0000 L CNN
+F 1 "SDA" V 6450 5000 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4600 50  0001 C CNN
+F 3 "~" H 6650 4600 50  0001 C CNN
+	1    6450 4600
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP14
+U 1 1 5D3BC585
+P 6450 4900
+F 0 "TP14" V 6450 5100 50  0000 L CNN
+F 1 "ANT1" V 6450 5300 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 4900 50  0001 C CNN
+F 3 "~" H 6650 4900 50  0001 C CNN
+	1    6450 4900
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP15
+U 1 1 5D3BC58B
+P 6450 5000
+F 0 "TP15" V 6450 5200 50  0000 L CNN
+F 1 "ANT2" V 6450 5400 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 5000 50  0001 C CNN
+F 3 "~" H 6650 5000 50  0001 C CNN
+	1    6450 5000
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP5
+U 1 1 5D3BD987
+P 6450 3500
+F 0 "TP5" V 6450 3700 50  0000 L CNN
+F 1 "WAKE" V 6450 3900 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 6650 3500 50  0001 C CNN
+F 3 "~" H 6650 3500 50  0001 C CNN
+	1    6450 3500
+	0    -1   -1   0   
+$EndComp
+$Comp
+L Connector:TestPoint TP11
+U 1 1 5D3BD993
+P 8550 4300
+F 0 "TP11" V 8550 4500 50  0000 L CNN
+F 1 "RTS" V 8550 4700 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 8750 4300 50  0001 C CNN
+F 3 "~" H 8750 4300 50  0001 C CNN
+	1    8550 4300
+	0    1    1    0   
+$EndComp
+$Comp
+L Connector:TestPoint TP9
+U 1 1 5D3BD999
+P 8550 4200
+F 0 "TP9" V 8550 4400 50  0000 L CNN
+F 1 "CTS" V 8550 4600 50  0000 L CNN
+F 2 "TestPoint:TestPoint_Pad_1.0x1.0mm" H 8750 4200 50  0001 C CNN
+F 3 "~" H 8750 4200 50  0001 C CNN
+	1    8550 4200
+	0    1    1    0   
+$EndComp
+Wire Wire Line
+	8400 4200 8550 4200
+Wire Wire Line
+	8400 4300 8550 4300
+Wire Wire Line
+	6600 3500 6450 3500
+Wire Wire Line
+	6450 4000 6600 4000
+Wire Wire Line
+	6450 4100 6600 4100
+Wire Wire Line
+	6450 4200 6600 4200
+Wire Wire Line
+	6450 4300 6600 4300
+Wire Wire Line
+	6450 4500 6600 4500
+Wire Wire Line
+	6450 4600 6600 4600
+Wire Wire Line
+	6450 4900 6600 4900
+Wire Wire Line
+	6600 5000 6450 5000
+$Comp
+L newie:Logo-NewieVentures-75px G1
+U 1 1 5D44D514
+P 5550 6350
+F 0 "G1" H 5550 6144 60  0001 C CNN
+F 1 "Logo-NewieVentures-75px" H 5550 6556 60  0001 C CNN
+F 2 "newie:logo_14.2x12.1mm" H 5450 6044 60  0001 C CNN
+F 3 "" H 5550 6144 60  0001 C CNN
+	1    5550 6350
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC

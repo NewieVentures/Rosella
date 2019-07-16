@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ARTIFACTS="FP1 FP2 FA1 FA2"
+ARTIFACTS="FP1 FP2 FA1 FA2 FP3"
 
 for i in $ARTIFACTS; do
     echo "Generating BOM for "$i
