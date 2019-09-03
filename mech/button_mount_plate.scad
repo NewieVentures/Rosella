@@ -12,16 +12,22 @@ module mount_hole() {
     cylinder(d=MOUNT_HOLE_D, h=MOUNT_PLATE_H*3, center=true);
 }
 
-module mounting_post(x_ofs, y_ofs, angle) {
+module mounting_post(l, x_ofs, y_ofs, angle) {
     translate([-(SEEEDUINO_BRD_W/2 - x_ofs), 
                    -(SEEEDUINO_BRD_L/2 - y_ofs), 
-                   MOUNT_PLATE_H+0.001]) 
+                   MOUNT_PLATE_H+0.001]) {
       difference() {
-        hull() {
-          cylinder(d=BRD_POST_D, h=BRD_POST_H);
-          translate([BRD_POST_LEN*cos(angle), BRD_POST_LEN*sin(angle)]) cylinder(d=BRD_POST_D, h=BRD_POST_H);
+        union() {
+            hull() {
+              cylinder(d=BRD_POST_D, h=BRD_POST_H);
+              translate([l*cos(angle), l*sin(angle)]) cylinder(d=BRD_POST_D, h=BRD_POST_H);
+            }
+        translate([0, 0, BRD_POST_H]) cylinder(d=BRD_POST_D, h=BRD_SCREW_POST_H);
         }
-        cylinder(d=BRD_MOUNT_HOLE_D, 3*BRD_POST_H, center=true);
+        cylinder(d=BRD_MOUNT_HOLE_D, 3*(BRD_POST_H + BRD_SCREW_POST_H), center=true);
+      }
+        
+        
     }
 }
 
@@ -40,24 +46,16 @@ module mount_plate() {
     }
     
     // bottom left
-    mounting_post(BRD_HOLE_OFS_X_BL, BRD_HOLE_OFS_Y_BL, angle=52.5);
+    mounting_post(BRD_POST_LEN, BRD_HOLE_OFS_X_BL, BRD_HOLE_OFS_Y_BL, angle=52.5);
 
     // bottom right
-    mounting_post(BRD_HOLE_OFS_X_BR, BRD_HOLE_OFS_Y_BR, angle=127.5);
+    mounting_post(0.88*BRD_POST_LEN, BRD_HOLE_OFS_X_BR, BRD_HOLE_OFS_Y_BR, angle=80);
 
     // top left
-    mounting_post(BRD_HOLE_OFS_X_TL, BRD_HOLE_OFS_Y_TL, angle=-90);
+    mounting_post(BRD_POST_LEN, BRD_HOLE_OFS_X_TL, BRD_HOLE_OFS_Y_TL, angle=-90);
 
     // top right
-    mounting_post(BRD_HOLE_OFS_X_TR, BRD_HOLE_OFS_Y_TR, angle=-120);
-
-    // strain relief post
-    translate([(MOUNT_PLATE_D - SEEEDUINO_BRD_W)/4 + SEEEDUINO_BRD_W/2, 0, MOUNT_PLATE_H-0.001]) {
-        difference() {
-            cylinder(d=STR_REL_D, h=STR_REL_H);
-            cylinder(d=STR_REL_HOLE_D, h=3*STR_REL_H);
-        }
-    }
+    mounting_post(BRD_POST_LEN, BRD_HOLE_OFS_X_TR, BRD_HOLE_OFS_Y_TR, angle=-120);
 }
 
 rotate([0, 0, 120]) mount_plate();

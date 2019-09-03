@@ -38,20 +38,21 @@ BRD_HOLE_OFS_Y_BR = BRD_HOLE_OFS_Y_BL;
 BRD_HOLE_OFS_Y_TL = SEEEDUINO_BRD_L - 1 - SEEEDUINO_HOLE_D/2;
 BRD_HOLE_OFS_Y_TR = BRD_HOLE_OFS_Y_TL;
 
-BRD_MOUNT_HOLE_D = 2.9;
+BRD_MOUNT_HOLE_D = 3.0;
 
 /************************************************************************
 * Mount plate
 ************************************************************************/
 MOUNT_PLATE_D = 71;
-MOUNT_PLATE_H = 2.5;
-MOUNT_HOLE_D = 3.6;
+MOUNT_PLATE_H = 2.9;
+MOUNT_HOLE_D = 4.2;
 BRD_POST_D = 6.5;
 BRD_POST_LEN = 10;
 BRD_POST_ANG = 60;
 BRD_POST_H = 5;
-SCREW_HEAD_D = 5.4;
-SCREW_HEAD_H = 2;
+BRD_SCREW_POST_H = 3;
+SCREW_HEAD_D = 7.6;
+SCREW_HEAD_H = 2.7;
 
 MNT_HOLE_TO_HOLE = 54.2; // center to center
 MNT_HOLE_EDGE_OFS = 2.6; // offset from disc edge
