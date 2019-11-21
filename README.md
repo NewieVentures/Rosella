@@ -1,4 +1,4 @@
-# Project Faraday
+# Rosella (code name Project Faraday)
 ### By NewieVentures
 
 Remote control of LED strip lights via DMX over cellular.
