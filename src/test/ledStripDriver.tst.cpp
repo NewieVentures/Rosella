@@ -42,6 +42,7 @@ static const led_strip_config_t CONFIG_LEDS_6 = {
 
 #define WEATHER_TEST_LED_CONFIG CONFIG_LEDS_6
 #define WIND_TEST_LED_CONFIG CONFIG_LEDS_3
+#define AIR_TEST_LED_CONFIG CONFIG_LEDS_3
 
 static void verify_colours(Colour *expected,
                            uint8_t *values,
@@ -3002,4 +3003,367 @@ TEST(LedStripDriverWindTestGroup, shouldNotWriteWarningEndColourAtCounterIfInOff
   driver->onTimerFired(&state, values);
 
   verify_colours((Colour*)&COLOUR_WIND_DIR, lastValuesWritten, WIND_TEST_LED_CONFIG.numLeds);
+}
+
+/***********************************************************************************************
+ * Air quality pattern
+ **********************************************************************************************/
+TEST_GROUP(LedStripDriverAirTestGroup)
+{
+  void setup() {
+    const uint32_t valuesLength = MAX_LEDS * COLOURS_PER_LED;
+
+    driver = new LedStripDriver((led_strip_config_t*)&AIR_TEST_LED_CONFIG);
+    lastValuesWritten = new uint8_t[valuesLength];
+    memset(lastValuesWritten, 0, valuesLength);
+    memset(values, 0, valuesLength);
+  }
+
+  void teardown() {
+    delete driver;
+    delete[] lastValuesWritten;
+  }
+};
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerOneInitialState)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L1_1, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerOneMidFade)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_WHITE;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_BLACK;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_RED;
+
+  const Colour& COLOUR_MID = Colour(127, 127, 127);
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = 2000,
+    .fadeDirection = 1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerOneFinalState)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS-1,
+    .fadeDirection = 1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L1_2, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerOneMidRevFade)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  const Colour& COLOUR_MID = Colour(127, 127, 0);
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = 2000,
+    .fadeDirection = -1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerOneReverseFinalState)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS-1,
+    .fadeDirection = -1,
+  };
+
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L1_1, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerTwoInitialState)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = 0,
+    .fadeDirection = 1,
+  };
+
+  driver->activeLayer(2);
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L2_1, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerTwoMidFade)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_WHITE;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_BLACK;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_RED;
+
+  const Colour& COLOUR_MID = Colour(127, 0, 127);
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = 2000,
+    .fadeDirection = 1,
+  };
+
+  driver->activeLayer(2);
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerTwoFinalState)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS-1,
+    .fadeDirection = 1,
+  };
+
+  driver->activeLayer(2);
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L2_2, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerTwoMidRevFade)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  const Colour& COLOUR_MID = Colour(127, 127, 255);
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = 2000,
+    .fadeDirection = -1,
+  };
+
+  driver->activeLayer(2);
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_MID, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesForLayerTwoReverseFinalState)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS-1,
+    .fadeDirection = -1,
+  };
+
+  driver->activeLayer(2);
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L2_1, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, writesCorrectValuesAfterReversal)
+{
+  const uint32_t PERIOD_MS = 4000;
+
+  const Colour& COLOUR_AIR_L1_1 = COLOUR_RED;
+  const Colour& COLOUR_AIR_L1_2 = COLOUR_GREEN;
+  const Colour& COLOUR_AIR_L2_1 = COLOUR_BLUE;
+  const Colour& COLOUR_AIR_L2_2 = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+        ->colourOn((Colour*)&COLOUR_AIR_L1_1)
+        ->colourOff((Colour*)&COLOUR_AIR_L1_2)
+        ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+        ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+        ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS,
+    .fadeDirection = 1,
+  };
+
+  driver->activeLayer(1);
+  driver->onTimerFired(&state, values);
+
+  verify_colours((Colour*)&COLOUR_AIR_L1_2, lastValuesWritten, AIR_TEST_LED_CONFIG.numLeds);
+}
+
+TEST(LedStripDriverAirTestGroup, resetsCounter)
+{
+  const uint32_t PERIOD_MS = 3;
+  const Colour COL_WHITE = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+    ->colourOn((Colour*)&COL_WHITE)
+    ->colourOff((Colour*)&COL_WHITE)
+    ->layer2Colour1((Colour*)&COL_WHITE)
+    ->layer2Colour2((Colour*)&COL_WHITE)
+    ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(1, state.counter);
+}
+
+TEST(LedStripDriverAirTestGroup, reversesFadeDirection)
+{
+  const uint32_t PERIOD_MS = 3;
+  const Colour COL_WHITE = COLOUR_WHITE;
+
+  driver->pattern(Pattern::air)
+    ->colourOn((Colour*)&COL_WHITE)
+    ->colourOff((Colour*)&COL_WHITE)
+    ->layer2Colour1((Colour*)&COL_WHITE)
+    ->layer2Colour2((Colour*)&COL_WHITE)
+    ->period(PERIOD_MS);
+
+  led_strip_state_t state = {
+    .counter = PERIOD_MS,
+    .fadeDirection = 1
+  };
+
+  driver->onTimerFired(&state, values);
+
+  LONGS_EQUAL(-1, state.fadeDirection);
 }

@@ -7,6 +7,7 @@
 #define DL_NUM_COL 4
 
 enum Pattern {
+  air,
   blink,
   colour,
   defaultLoop,
@@ -16,7 +17,7 @@ enum Pattern {
   snake,
   strobe,
   weather,
-  wind,
+  wind
 };
 
 enum Direction {
@@ -81,6 +82,7 @@ private:
   void handleWeatherPattern(led_strip_state_t *state, uint8_t *values);
   void handleDefaultLoopPattern(led_strip_state_t *state, uint8_t *values);
   void handleWindPattern(led_strip_state_t *state, uint8_t *values);
+  void handleAirPattern(led_strip_state_t *state, uint8_t *values);
 
   void handleWeatherTempLayer(led_strip_state_t *state, uint8_t *values, Colour *outputColour);
   void updateWeatherRainState(led_strip_state_t *state);
@@ -126,6 +128,10 @@ protected:
   bool mWindDirTransition; // true when fading to new direction value
   WindPattern mCurrentWindPattern;
   uint32_t mWindSpeedTimeoutMs;
+
+  Colour* mLayer2Colour1;
+  Colour* mLayer2Colour2;
+  uint32_t mActiveLayer;
 
 public:
   void initState(led_strip_state_t *state);
@@ -219,6 +225,12 @@ public:
 
   /* Used by wind pattern to show the wind speed for a certain time */
   LedStripDriver* showWindSpeed(led_strip_state_t *state, uint32_t timeoutMs);
+
+  /* Used by air pattern to change the displayed layer */
+  LedStripDriver* activeLayer(uint32_t layer);
+
+  LedStripDriver* layer2Colour1(Colour *colour);
+  LedStripDriver* layer2Colour2(Colour *colour);
 
   /*
    * Reset the state on next loop iteration. Used when pattern changes if state reset required.

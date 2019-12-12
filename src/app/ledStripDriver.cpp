@@ -103,6 +103,10 @@ LedStripDriver::LedStripDriver(led_strip_config_t *config) {
   mPrevWindDirectionColour = (Colour*)&COL_BLACK;
 
   mResetState = false;
+
+  mLayer2Colour1 = (Colour*)&COL_BLACK;
+  mLayer2Colour2 = (Colour*)&COL_BLACK;
+  mActiveLayer = 1;
 };
 
 inline void reverseDutyCycleDirection(led_strip_state_t *state) {
@@ -634,6 +638,46 @@ void LedStripDriver::handleWindPattern(led_strip_state_t *state, uint8_t *values
   }
 }
 
+void LedStripDriver::handleAirPattern(led_strip_state_t *state, uint8_t *values) {
+  uint32_t steps = (mPeriodMs / mConfig->resolutionMs) - 1;
+  uint32_t currentStep;
+  Colour outputColour;
+  Colour *startCol, *endCol;
+
+  if (state->counter >= mPeriodMs) {
+    state->counter = 0;
+    state->fadeDirection *= -1;
+  }
+
+  if (state->fadeDirection > 0) {
+    if (mActiveLayer == 2) {
+      startCol = mLayer2Colour1;
+      endCol = mLayer2Colour2;
+    } else {
+      startCol = mColourOn;
+      endCol = mColourOff;
+    }
+  } else {
+    if (mActiveLayer == 2) {
+      startCol = mLayer2Colour2;
+      endCol = mLayer2Colour1;
+    } else {
+      startCol = mColourOff;
+      endCol = mColourOn;
+    }
+  }
+
+  currentStep = state->counter / mConfig->resolutionMs;
+
+  calculateFadedColour(&outputColour,
+                       startCol,
+                       endCol,
+                       currentStep,
+                       steps);
+
+  writeColourValues(values, mConfig->numLeds, &outputColour);
+}
+
 void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
   const uint32_t numLedValues = COLOURS_PER_LED * mConfig->numLeds;
 
@@ -661,6 +705,10 @@ void LedStripDriver::onTimerFired(led_strip_state_t *state, uint8_t *values) {
   }
 
   switch(mPattern) {
+    case air:
+      handleAirPattern(state, values);
+      break;
+
     case blink:
       handleBlinkPattern(state, values);
       break;
@@ -720,6 +768,7 @@ void LedStripDriver::onPatternTimeout(led_strip_state_t *state, uint8_t *values)
     case strobe:
       break;
 
+    case air:
     case weather:
     case wind:
       pattern(Pattern::defaultLoop)
@@ -936,5 +985,20 @@ LedStripDriver* LedStripDriver::showWindSpeed(led_strip_state_t *state, uint32_t
   mWindSpeedTimeoutMs = timeoutMs;
   // mPatternTimeoutMs = timeoutMs;
 
+  return this;
+}
+
+LedStripDriver* LedStripDriver::activeLayer(uint32_t layer) {
+  mActiveLayer = layer;
+  return this;
+}
+
+LedStripDriver* LedStripDriver::layer2Colour1(Colour *colour) {
+  mLayer2Colour1 = colour;
+  return this;
+}
+
+LedStripDriver* LedStripDriver::layer2Colour2(Colour *colour) {
+  mLayer2Colour2 = colour;
   return this;
 }
