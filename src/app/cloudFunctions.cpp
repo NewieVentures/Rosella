@@ -15,6 +15,7 @@
 #define ARG_COUNT_SNAKE 5
 #define ARG_COUNT_WEATHER 9
 #define ARG_COUNT_WIND 7
+#define ARG_COUNT_AIR 5
 
 const argParser::ArgInfo ARG_INFO_PERIOD_MS = {
   .type = ARG_TYPE_NUMBER,
@@ -187,6 +188,13 @@ const argParser::ArgInfo ARGS_INFO_WIND[] = {
   ARG_INFO_WEATHER_WARNING_OFF_DWELL
 };
 
+const argParser::ArgInfo ARGS_INFO_AIR[] = {
+  ARG_INFO_COLOUR,
+  ARG_INFO_COLOUR,
+  ARG_INFO_COLOUR,
+  ARG_INFO_COLOUR,
+  ARG_INFO_PERIOD_MS,
+};
 
 const argParser::ArgInfo ARGS_INFO_GRADIENT[] = {
   ARG_INFO_COLOUR,
@@ -242,6 +250,11 @@ const argParser::ArgConfig ARG_CONFIG_WIND = {
   .length = ARG_COUNT_WIND,
 };
 
+const argParser::ArgConfig ARG_CONFIG_AIR = {
+  .info = ARGS_INFO_AIR,
+  .length = ARG_COUNT_AIR,
+};
+
 static Direction intToDirection(uint8_t value) {
   return value == 0 ? Direction::forward : Direction::reverse;
 }
@@ -254,6 +267,8 @@ CloudFunctions::CloudFunctions(LedStripDriver *ledDriver) {
   mWeatherWarningColour = new COLOUR_WHITE;
   mWindDirectionColour = new COLOUR_BLACK;
   mPrevWindDirectionColour = new COLOUR_BLACK;
+  mLayer2Colour1 = new COLOUR_BLACK;
+  mLayer2Colour2 = new COLOUR_BLACK;
 }
 
 CloudFunctions::~CloudFunctions() {
@@ -289,6 +304,7 @@ void CloudFunctions::registerFunctions(int (*regFn)(String,
   regFn(String("snake"), (&CloudFunctions::snake), this);
   regFn(String("weather"), (&CloudFunctions::weather), this);
   regFn(String("wind"), (&CloudFunctions::wind), this);
+  regFn(String("air"), (&CloudFunctions::air), this);
 }
 
 void CloudFunctions::deleteColours() {
@@ -306,6 +322,16 @@ void CloudFunctions::deleteColours() {
   if (mPrevWindDirectionColour != nullptr) {
     delete mPrevWindDirectionColour;
     mPrevWindDirectionColour = nullptr;
+  }
+
+  if (mLayer2Colour1 != nullptr) {
+    delete mLayer2Colour1;
+    mLayer2Colour1 = nullptr;
+  }
+
+  if (mLayer2Colour2 != nullptr) {
+    delete mLayer2Colour2;
+    mLayer2Colour2 = nullptr;
   }
 }
 
@@ -560,6 +586,32 @@ int CloudFunctions::wind(String args) {
       ->warningFadeIn(warningFadeInMs)
       ->warningFadeOut(warningFadeOutMs)
       ->warningOffDwell(warningOffDwellMs);
+  }
+
+  return result;
+}
+
+int CloudFunctions::air(String args) {
+  String parsedArgs[ARG_COUNT_AIR];
+  int32_t result = parseAndValidateArgs(parsedArgs, &ARG_CONFIG_AIR, args);
+  uint32_t fadeIntervalMs;
+
+  if (result == 0) {
+    deleteColours();
+
+    mColourOn = new Colour(parsedArgs[0]);  // Location 1 air quality colour 1
+    mColourOff = new Colour(parsedArgs[1]); // Location 1 air quality colour 2
+    mLayer2Colour1 = new Colour(parsedArgs[2]); // Location 2 air quality colour 2
+    mLayer2Colour2 = new Colour(parsedArgs[3]); // Location 2 air quality colour 2
+
+    strToInt(&fadeIntervalMs, parsedArgs[4]);
+
+    mLedDriver->pattern(Pattern::air)
+      ->colourOn(mColourOn)
+      ->colourOff(mColourOff)
+      ->layer2Colour1(mLayer2Colour1)
+      ->layer2Colour2(mLayer2Colour2)
+      ->period(fadeIntervalMs);
   }
 
   return result;

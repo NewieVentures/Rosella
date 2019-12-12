@@ -281,6 +281,9 @@ public:
   uint32_t getWeatherWarningOffDwell() { return mWeatherWarningOffDwellMs; };
 
   Colour* getWindDirectionColour() { return mWindDirectionColour; };
+
+  Colour* getLayer2Colour1() { return mLayer2Colour1; }
+  Colour* getLayer2Colour2() { return mLayer2Colour2; }
 };
 
 #endif

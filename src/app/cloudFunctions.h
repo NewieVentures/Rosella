@@ -14,6 +14,7 @@ class CloudFunctions {
                                       int (CloudFunctions::*cloudFn)(String),
                                       CloudFunctions*));
 
+  int air(String args);
   int blink(String args);
   int colour(String args);
   int defaultLoop(String args);
@@ -33,6 +34,8 @@ class CloudFunctions {
   Colour *mWeatherWarningColour;
   Colour *mWindDirectionColour;
   Colour *mPrevWindDirectionColour;
+  Colour *mLayer2Colour1;
+  Colour *mLayer2Colour2;
 
   void deleteColours();
 

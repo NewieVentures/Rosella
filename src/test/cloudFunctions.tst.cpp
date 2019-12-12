@@ -96,6 +96,11 @@ TEST(CloudFunctionsTestGroup, registersFunctions)
     .withParameter("fn", (void*)&CloudFunctions::wind)
     .withParameter("cls", cloudFunctions);
 
+  mock().expectOneCall("registerFunction")
+    .withParameter("name", "air")
+    .withParameter("fn", (void*)&CloudFunctions::air)
+    .withParameter("cls", cloudFunctions);
+
   cloudFunctions->registerFunctions(&registerFunction);
   delete cloudFunctions;
 }
@@ -599,6 +604,70 @@ TEST(CloudFunctionsTestGroup, weatherDoesntChangePatternOnParseError)
 
   cloudFunctions->weather("#000000,#111111,10,100,100,");
   CHECK_TEXT(ledStripDriver->getPattern() != Pattern::weather, "Pattern changed to weather!");
+
+  delete cloudFunctions;
+}
+
+
+TEST(CloudFunctionsTestGroup, airPassesCorrectArgsToLedDriver)
+{
+  uint32_t FADE_INTERVAL = 4000;
+  Colour COLOUR_L1_1 = Colour("#8B2A75");
+  Colour COLOUR_L1_2 = Colour("#501243");
+  Colour COLOUR_L2_1 = Colour("#9231A3");
+  Colour COLOUR_L2_2 = Colour("#230187");
+  char args[ARGS_LEN_MAX];
+
+  sprintf(args, "%s,%s,%s,%s,%d",
+          COLOUR_L1_1.toString().c_str(),
+          COLOUR_L1_2.toString().c_str(),
+          COLOUR_L2_1.toString().c_str(),
+          COLOUR_L2_2.toString().c_str(),
+          FADE_INTERVAL);
+
+  cloudFunctions = new CloudFunctions(ledStripDriver);
+  cloudFunctions->registerFunctions(&registerFunction);
+  cloudFunctions->air(args);
+
+  CHECK_TEXT(Pattern::air == ledStripDriver->getPattern(), "not air pattern!");
+  STRCMP_EQUAL_TEXT(COLOUR_L1_1.toString(), ledStripDriver->getColourOn()->toString(), "colourOn incorrect!");
+  STRCMP_EQUAL_TEXT(COLOUR_L1_2.toString(), ledStripDriver->getColourOff()->toString(), "colourOff incorrect!");
+  STRCMP_EQUAL_TEXT(COLOUR_L2_1.toString(), ledStripDriver->getLayer2Colour1()->toString(), "layer 2 colour 1 incorrect!");
+  STRCMP_EQUAL_TEXT(COLOUR_L2_2.toString(), ledStripDriver->getLayer2Colour2()->toString(), "layer 2 colour 2 incorrect!");
+  LONGS_EQUAL_TEXT(FADE_INTERVAL, ledStripDriver->getPeriod(), "fade interval incorrect!");
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, airReturnsErrorForInvalidInput)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver);
+  cloudFunctions->registerFunctions(&registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_INVALID_ARG,
+              cloudFunctions->air("0,#FFFFFF,#000000,#0000FF,4000"));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, airReturnsSuccessForValidInput)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver);
+  cloudFunctions->registerFunctions(&registerFunction);
+
+  LONGS_EQUAL(argParser::RET_VAL_SUC,
+              cloudFunctions->air("#000000,#111111,#222222,#333333,4000"));
+
+  delete cloudFunctions;
+}
+
+TEST(CloudFunctionsTestGroup, airDoesntChangePatternOnParseError)
+{
+  cloudFunctions = new CloudFunctions(ledStripDriver);
+  cloudFunctions->registerFunctions(&registerFunction);
+
+  cloudFunctions->air("0,#111111,#222222,#333333,4000");
+  CHECK_TEXT(ledStripDriver->getPattern() != Pattern::air, "Pattern changed to air on parse error!");
 
   delete cloudFunctions;
 }
