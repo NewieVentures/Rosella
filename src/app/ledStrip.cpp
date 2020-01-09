@@ -38,6 +38,21 @@ void onPatternLayer2Selected() {
   ledDriver->activeLayer(2);
 }
 
+void initToggleSwitch() {
+  // Active low SPDT rocker switch
+  pinMode(GPIO_L1_BUTTON, INPUT_PULLUP);
+  pinMode(GPIO_L2_BUTTON, INPUT_PULLUP);
+
+  if (digitalRead(GPIO_L2_BUTTON) == LOW) {
+    onPatternLayer2Selected();
+  } else {
+    onPatternLayer1Selected();
+  }
+
+  attachInterrupt(GPIO_L1_BUTTON, &onPatternLayer1Selected, FALLING);
+  attachInterrupt(GPIO_L2_BUTTON, &onPatternLayer2Selected, FALLING);
+}
+
 void ledStrip::setup() {
   dmx::setup();
 
@@ -90,12 +105,7 @@ void ledStrip::setup() {
      ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
      ->period(4000);
 
-  // set up button
-  pinMode(GPIO_L1_BUTTON, INPUT_PULLDOWN);
-  pinMode(GPIO_L2_BUTTON, INPUT_PULLDOWN);
-  attachInterrupt(GPIO_L1_BUTTON, &onPatternLayer1Selected, RISING);
-  attachInterrupt(GPIO_L2_BUTTON, &onPatternLayer2Selected, RISING);
-  //****
+   initToggleSwitch();
 }
 
 LedStripDriver* ledStrip::getDriver() {
