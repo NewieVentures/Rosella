@@ -548,7 +548,8 @@ int CloudFunctions::weather(String args) {
       ->warningColour(mWeatherWarningColour)
       ->warningFadeIn(warningFadeInMs)
       ->warningFadeOut(warningFadeOutMs)
-      ->warningOffDwell(warningOffDwellMs);
+      ->warningOffDwell(warningOffDwellMs)
+      ->timeout(PATTERN_TIMEOUT_MS);
   }
 
   return result;
@@ -585,7 +586,8 @@ int CloudFunctions::wind(String args) {
       ->warningColour(mWeatherWarningColour)
       ->warningFadeIn(warningFadeInMs)
       ->warningFadeOut(warningFadeOutMs)
-      ->warningOffDwell(warningOffDwellMs);
+      ->warningOffDwell(warningOffDwellMs)
+      ->timeout(PATTERN_TIMEOUT_MS);
   }
 
   return result;
@@ -611,7 +613,8 @@ int CloudFunctions::air(String args) {
       ->colourOff(mColourOff)
       ->layer2Colour1(mLayer2Colour1)
       ->layer2Colour2(mLayer2Colour2)
-      ->period(fadeIntervalMs);
+      ->period(fadeIntervalMs)
+      ->timeout(PATTERN_TIMEOUT_MS);
   }
 
   return result;
