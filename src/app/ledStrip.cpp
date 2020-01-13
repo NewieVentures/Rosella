@@ -60,8 +60,8 @@ void ledStrip::setup() {
   ledDriver->initState(&ledState);
 
   // default pattern on power-up
-   // ledDriver->pattern(Pattern::defaultLoop)
-            // ->period(5000);
+  ledDriver->pattern(Pattern::defaultLoop)
+           ->period(5000);
   // ledDriver->pattern(Pattern::colour)
     // ->colourOn((Colour*)&COLOUR_START);
 
@@ -98,12 +98,12 @@ void ledStrip::setup() {
     ->warningOffDwell(10000);
   */
 
-   ledDriver->pattern(Pattern::air)
-     ->colourOn((Colour*)&COLOUR_START)
-     ->colourOff((Colour*)&COLOUR_END)
-     ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
-     ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
-     ->period(4000);
+   // ledDriver->pattern(Pattern::air)
+   //   ->colourOn((Colour*)&COLOUR_START)
+   //   ->colourOff((Colour*)&COLOUR_END)
+   //   ->layer2Colour1((Colour*)&COLOUR_AIR_L2_1)
+   //   ->layer2Colour2((Colour*)&COLOUR_AIR_L2_2)
+   //   ->period(4000);
 
    initToggleSwitch();
 }
